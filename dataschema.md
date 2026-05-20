@@ -1,0 +1,117 @@
+users{
+  _id,
+  name,
+  email,
+  password,
+  role: "user" | "admin"
+  avatar,
+  phone,
+whiteList:[],
+isActive,
+updatedAt,
+  createdAt
+}
+address{
+_id,
+user_id,
+fullName,
+phone,
+city,
+ward,
+detail,
+createAt
+}
+products{
+  _id,
+  name,
+  description,
+  basePrice,
+  discountPrice,
+  images,
+  category_id,
+  variants:[
+{
+	sku,
+	color,
+	size,
+	stock,
+	image,
+	isActive
+}
+],
+  totalStock,
+  rating,
+  sold,
+isActive,
+  createdAt
+}
+categories{
+  _id,
+  name,
+parent_id,
+  image,
+isActive,
+  createdAt
+}
+carts{
+_id,
+  user_id,
+  items: [
+    {
+      product,
+      quantity,
+      sku
+    }
+  ]
+}
+orders{
+_id,
+  user,
+  orderItems:[
+{
+	product,
+      name,
+	sku,
+      image,
+      color,
+      size,
+      price,
+      quantity	
+}
+],
+  shippingAddress:{
+fullName,
+phone,
+city,
+ward,
+detail,
+note,
+},
+ paymentMethod, // COD | VNPAY | MOMO | STRIPE
+  paymentStatus, // Pending | Paid | Failed | Refunded
+  orderStatus, // Pending | Confirmed | Processing | Shipping | Delivered | Cancelled | Refunded
+itemPrice,
+shipingPrice, // logic shipingPrice = (itemPrice>500000)? 0 : 30000
+discountPrice,
+totalPrice,
+  createdAt,
+paidAt,
+deliveredAt,
+cancelledAt
+}
+reviews{
+  user,
+  product_id,
+  rating,
+  comment,
+  createdAt
+}
+voucher{
+  code,
+  discountType, //fixed |  percent
+usageLimit,
+  discountValue,
+  expiredAt
+}
+
+
