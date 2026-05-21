@@ -327,9 +327,9 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Nút hành động ưu đãi */}
-          <button className="action-banner">
+          {/* <button className="action-banner">
             Click vào đây để nhận ưu đãi hội viên OLDMAN
-          </button>
+          </button> */}
 
           {/* Khối mô tả chi tiết sản phẩm */}
           {product.description && (
