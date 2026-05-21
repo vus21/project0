@@ -193,7 +193,7 @@ class ProductService {
 
     if (action === 'add') {
       const existingSku = product.variants.find(v => v.sku === variantData.sku);
-      if (existingSku) throw new ApiError(HTTP_STATUS.CONFLICT, 'SsssKU đã tồn tại');
+      if (existingSku) throw new ApiError(HTTP_STATUS.CONFLICT, 'SKU đã tồn tại');
       product.variants.push(variantData);
     } else if (action === 'update') {
       const variant = product.variants.find(v => v.sku === variantData.sku);

@@ -13,7 +13,7 @@ const app = express();
 // Cấu hình Rate Limiting (100 req/15min)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 phút
-  max: 100, // giới hạn 100 request cho mỗi IP
+  max: 10000, // giới hạn 100 request cho mỗi IP
   message: 'Quá nhiều yêu cầu từ IP này, vui lòng thử lại sau 15 phút.',
 });
 

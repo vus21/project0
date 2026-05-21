@@ -1,43 +1,164 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+
+import oldmanLogo from '../../assets/oldman_logo.png';
 
 export default function Footer() {
+
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="relative bg-[#f5efe6] border-t border-[#e5d8c5] overflow-hidden">
+
+      {/* Glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(184,147,95,0.10),transparent_55%)]"></div>
+
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-20">
+
+        {/* TOP */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+
+          {/* BRAND */}
           <div>
-            <h3 className="text-xl font-bold text-white mb-4">FashionStore</h3>
-            <p className="text-sm">Nền tảng thương mại điện tử chuyên cung cấp các sản phẩm thời trang chất lượng cao, bắt kịp xu hướng.</p>
+
+            <div className="flex items-center gap-4 mb-6">
+
+              <img
+                src={oldmanLogo}
+                alt="OLDMAN"
+                className="w-14 h-14 object-contain"
+              />
+
+              <div>
+
+                <p className="text-[10px] uppercase tracking-[4px] text-[#8a6c46] mb-1">
+                  Classic Style
+                </p>
+
+                <h2 className="text-3xl font-semibold tracking-[6px] text-[#1f1a14]">
+                  OLDMAN
+                </h2>
+
+              </div>
+
+            </div>
+
+            <p className="text-[#7a6040] leading-8">
+              Thương hiệu thời trang nam mang phong cách
+              cổ điển hiện đại dành cho quý ông lịch lãm.
+            </p>
+
           </div>
+
+          {/* LINKS */}
           <div>
-            <h4 className="text-lg font-bold text-white mb-4">Liên kết</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-primary-500">Về chúng tôi</a></li>
-              <li><a href="#" className="hover:text-primary-500">Chính sách bảo mật</a></li>
-              <li><a href="#" className="hover:text-primary-500">Điều khoản sử dụng</a></li>
+
+            <h3 className="text-[#1f1a14] text-lg tracking-[3px] uppercase mb-6">
+              Liên Kết
+            </h3>
+
+            <ul className="space-y-4">
+
+              <li>
+                <Link
+                  to="/"
+                  className="text-[#7a6040] hover:text-[#b8935f] transition"
+                >
+                  Trang chủ
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="/products"
+                  className="text-[#7a6040] hover:text-[#b8935f] transition"
+                >
+                  Sản phẩm
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="/about"
+                  className="text-[#7a6040] hover:text-[#b8935f] transition"
+                >
+                  Về chúng tôi
+                </Link>
+              </li>
+
             </ul>
+
           </div>
+
+          {/* SUPPORT */}
           <div>
-            <h4 className="text-lg font-bold text-white mb-4">Hỗ trợ khách hàng</h4>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-primary-500">Trung tâm trợ giúp</a></li>
-              <li><a href="#" className="hover:text-primary-500">Hướng dẫn mua hàng</a></li>
-              <li><a href="#" className="hover:text-primary-500">Chính sách đổi trả</a></li>
+
+            <h3 className="text-[#1f1a14] text-lg tracking-[3px] uppercase mb-6">
+              Hỗ Trợ
+            </h3>
+
+            <ul className="space-y-4">
+
+              <li className="text-[#7a6040]">
+                Chính sách bảo mật
+              </li>
+
+              <li className="text-[#7a6040]">
+                Điều khoản sử dụng
+              </li>
+
+              <li className="text-[#7a6040]">
+                Chính sách đổi trả
+              </li>
+
             </ul>
+
           </div>
+
+          {/* CONTACT */}
           <div>
-            <h4 className="text-lg font-bold text-white mb-4">Liên hệ</h4>
-            <ul className="space-y-2 text-sm">
-              <li>Hotline: 1900 1000</li>
-              <li>Email: support@fashionstore.com</li>
-              <li>Địa chỉ: 123 Đường ABC, Quận 1, TP.HCM</li>
+
+            <h3 className="text-[#1f1a14] text-lg tracking-[3px] uppercase mb-6">
+              Liên Hệ
+            </h3>
+
+            <ul className="space-y-4 text-[#7a6040] leading-7">
+
+              <li>
+                Hotline: 1900 1000
+              </li>
+
+              <li>
+                Email: support@oldman.com
+              </li>
+
+              <li>
+                123 Nguyễn Huệ, Quận 1, TP.HCM
+              </li>
+
             </ul>
+
           </div>
+
         </div>
-        <div className="mt-8 pt-8 border-t border-gray-800 text-center text-sm">
-          &copy; {new Date().getFullYear()} FashionStore. All rights reserved.
+
+        {/* BOTTOM */}
+        <div className="mt-16 pt-8 border-t border-[#e5d8c5] flex flex-col md:flex-row items-center justify-between gap-5">
+
+          <p className="text-[#9a8467] text-sm tracking-[2px] uppercase">
+            © {new Date().getFullYear()} OLDMAN • Classic Style • Timeless Man
+          </p>
+
+          <div className="flex items-center gap-6 text-sm">
+
+            <span className="text-[#8a6c46]">
+              Designed for Gentlemen
+            </span>
+
+          </div>
+
         </div>
+
       </div>
+
     </footer>
   );
 }

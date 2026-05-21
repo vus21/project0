@@ -14,16 +14,19 @@ import CategoriesPage from '../pages/admin/CategoryPage';
 import CategoriesFormPage from '../pages/admin/CategoriesFormPage';
 import InventoryPage from '../pages/admin/InventoryPage';
 import InventoryFormPage from '../pages/admin/InventoryFormPage';
+import UserPage from '../pages/admin/UserPage';
+import AllProductsPage from '../pages/shop/ProductsPage';
+import ProductDetailPage from '../pages/shop/ProductDetails';
 export default function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       
-      {/* Các trang hiển thị Navbar & Footer */}
       <Route element={<UserLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/products" element={<div className="p-8 text-center">Trang danh sách sản phẩm (Coming Soon)</div>} />
+        <Route path="/products" element={<AllProductsPage/>} />
+        <Route path="/products/:id" element={<ProductDetailPage />} />
         
         {/* Protected Routes cho User */}
         <Route element={<ProtectedRoute />}>
@@ -45,7 +48,8 @@ export default function AppRouter() {
           <Route path="/admin/categories" element={ <CategoriesPage />} />
           <Route path="/admin/categories/new" element={<CategoriesFormPage />} />
           <Route path="/admin/categories/:id/edit" element={<CategoriesFormPage />} />
-          <Route path="/admin/users" element={<div className="p-8 text-xl font-bold">Quản lý Người dùng (Coming soon)</div>} />
+          <Route path="/admin/users" element={<UserPage/>} />
+          <Route path="/admin/users/:id/edit" element={<div className="p-8 text-xl font-bold">Sửa Người dùng (Coming soon)</div>} />
           <Route path="/admin/vouchers" element={<div className="p-8 text-xl font-bold">Quản lý Voucher (Coming soon)</div>} />
         </Route>
       </Route>
