@@ -14,7 +14,6 @@ function discountPercent(base, discount) {
 export default function ProductCard({ product }) {
   const [imgIdx, setImgIdx] = useState(0);
   const [hovered, setHovered] = useState(false);
-
   const images = product.images || [];
   const mainImg = images[imgIdx]?.url || images[0]?.url;
   const hoverImg = images[1]?.url;

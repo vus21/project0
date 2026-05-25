@@ -33,7 +33,7 @@ export const PAYMENT_STATUS = {
 };
 
 export const PAYMENT_METHOD = {
-  COD: 'cod',
+  COD: 'COD',
 };
 
 export const DISCOUNT_TYPE = {

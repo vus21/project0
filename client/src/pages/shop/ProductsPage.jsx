@@ -28,7 +28,6 @@ const PRICE_RANGES = [
   { label: 'Trên 1.000.000đ', min: 1000000, max: Infinity },
 ];
 
-
 function ProductCardSkeleton() {
   return (
     <div style={{
@@ -163,8 +162,7 @@ export default function ProductListPage() {
                 fontFamily: '"Cormorant Garamond", serif',
               }}>
                 {category
-                  ? CATEGORIES.find(c => c.value === category)?.label || 'Sản phẩm'
-                  : 'Bộ sưu tập'}
+                  ? CATEGORIES.find(c => c.value === category)?.label || 'Sản phẩm' : 'Bộ sưu tập'}
               </h1>
               <p style={{
                 margin: '6px 0 0', fontSize: 13, color: '#7b6753',
@@ -178,7 +176,28 @@ export default function ProductListPage() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <form onSubmit={handleSearch} style={{ position: 'relative' }}>
                 
-                
+              <input
+                  type="text"
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  placeholder="Tìm kiếm sản phẩm..."
+                  style={{
+                    width: 220, height: 40, padding: '0 40px 0 16px',
+                    border: '1px solid #e7dccb', borderRadius: 8,
+                    background: '#ffffff', color: '#1f1a14', fontSize: 13,
+                    fontFamily: '"Cormorant Garamond", serif', letterSpacing: '0.03em',
+                    transition: 'border-color 0.2s',
+                  }}
+                />
+                <button type="submit" style={{
+                  position: 'absolute', right: 0, top: 0, height: '100%',
+                  width: 40, background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#7b6753', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                </button>
               </form>
 
               {/* Sort dropdown */}

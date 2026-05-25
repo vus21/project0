@@ -15,23 +15,30 @@ import CategoriesFormPage from '../pages/admin/CategoriesFormPage';
 import InventoryPage from '../pages/admin/InventoryPage';
 import InventoryFormPage from '../pages/admin/InventoryFormPage';
 import UserPage from '../pages/admin/UserPage';
+import OrdersPage from '../pages/admin/OrdersPage';
 import AllProductsPage from '../pages/shop/ProductsPage';
 import ProductDetailPage from '../pages/shop/ProductDetails';
+import CheckoutPage from '../pages/shop/CheckoutPage';
+import CartPage from '../pages/shop/CartPage';
+import ProfilePage from '../pages/auth/ProfilePage';
 export default function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      
       <Route element={<UserLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/products" element={<AllProductsPage/>} />
+        <Route path="/products" element={<AllProductsPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
-        
         {/* Protected Routes cho User */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/profile" element={<div>Profile Page (Coming soon)</div>} />
-          <Route path="/cart" element={<div>Cart Page (Coming soon)</div>} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/orders" element={<div>Orders Page (Coming soon)</div>} />
+          <Route path="/wishlist" element={<div>Wishlist Page (Coming soon)</div>} />
+          <Route path="/address" element={<div>Address Page (Coming soon)</div>} />
         </Route>
       </Route>
 
@@ -44,11 +51,11 @@ export default function AppRouter() {
           <Route path="/admin/products/:id/edit" element={<ProductFormPage />} />
           <Route path="/admin/inventory" element={<InventoryPage />} />
           <Route path="/admin/inventory/:id" element={<InventoryFormPage />} />
-          <Route path="/admin/orders" element={<div className="p-8 text-xl font-bold">Quản lý Đơn hàng (Coming soon)</div>} />
-          <Route path="/admin/categories" element={ <CategoriesPage />} />
+          <Route path="/admin/orders" element={<OrdersPage />} />
+          <Route path="/admin/categories" element={<CategoriesPage />} />
           <Route path="/admin/categories/new" element={<CategoriesFormPage />} />
           <Route path="/admin/categories/:id/edit" element={<CategoriesFormPage />} />
-          <Route path="/admin/users" element={<UserPage/>} />
+          <Route path="/admin/users" element={<UserPage />} />
           <Route path="/admin/users/:id/edit" element={<div className="p-8 text-xl font-bold">Sửa Người dùng (Coming soon)</div>} />
           <Route path="/admin/vouchers" element={<div className="p-8 text-xl font-bold">Quản lý Voucher (Coming soon)</div>} />
         </Route>

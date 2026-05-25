@@ -11,18 +11,19 @@ export default function ProductFormPage() {
   const { id } = useParams();
   const isEdit = !!id;
   const navigate = useNavigate();
-  
+
   const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     defaultValues: { isActive: true }
   });
 
   const [categories, setCategories] = useState([]);
-  const [images, setImages] = useState([]); 
-  const [previewImages, setPreviewImages] = useState([]); 
-  const [existingImages, setExistingImages] = useState([]); 
-  
+  const [images, setImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(isEdit);
+  const [product_id, setProductId] = useState('');
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -36,13 +37,13 @@ export default function ProductFormPage() {
     };
     fetchCategories();
 
-    
+
     if (isEdit) {
       const fetchProduct = async () => {
         try {
           const res = await productApi.getBySlug(id);
           const product = res?.data || {};
-          
+          setProductId(product._id);
           setValue('name', product.name || '');
           setValue('description', product.description || '');
           setValue('basePrice', product.basePrice || 0);
@@ -64,7 +65,7 @@ export default function ProductFormPage() {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setImages(prev => [...prev, ...files]);
-    
+
     const previews = files.map(file => URL.createObjectURL(file));
     setPreviewImages(prev => [...prev, ...previews]);
   };
@@ -90,7 +91,8 @@ export default function ProductFormPage() {
       });
 
       if (isEdit) {
-        await productApi.update(id, formData);
+        console.log("checkId: ", product_id)
+        await productApi.update(product_id, formData);
         toast.success('Cập nhật sản phẩm thành công');
       } else {
         await productApi.create(formData);
@@ -130,7 +132,7 @@ export default function ProductFormPage() {
               <input {...register('name', { required: 'Tên sản phẩm là bắt buộc' })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:bg-white transition-colors" placeholder="Nhập tên sản phẩm..." />
               {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
             </div>
-            
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Danh mục <span className="text-red-500">*</span></label>
               <select {...register('category_id', { required: 'Vui lòng chọn danh mục' })} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:bg-white transition-colors">
@@ -157,7 +159,7 @@ export default function ProductFormPage() {
                 <input type="number" {...register('discountPrice')} className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:bg-white transition-colors" placeholder="Để trống nếu không giảm giá" />
               </div>
             </div>
-            
+
             <div className="flex items-center mt-4">
               <input type="checkbox" id="isActive" {...register('isActive')} className="h-5 w-5 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
               <label htmlFor="isActive" className="ml-2 block text-sm font-medium text-gray-700">Kích hoạt hiển thị sản phẩm này</label>
@@ -171,7 +173,7 @@ export default function ProductFormPage() {
             <span className="bg-primary-100 text-primary-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">2</span>
             Hình ảnh sản phẩm
           </h2>
-          
+
           <div className="flex items-center justify-center w-full mb-6">
             <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">

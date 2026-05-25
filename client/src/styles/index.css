@@ -7,3 +7,8 @@
     @apply antialiased text-gray-900 bg-gray-50;
   }
 }
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
+
+ .font-serif {
+  font-family: "Cormorant Garamond", Georgia, serif !important;
+}   

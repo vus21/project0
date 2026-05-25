@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { cartApi } from '../../api/cartApi';
+import { Minus, Plus, ShoppingBag, CreditCard, ArrowLeft } from 'lucide-react';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
 }
 
 export default function ProductDetailPage() {
-  const {state} = useLocation();
+  const { state } = useLocation();
   const navigate = useNavigate();
-  
-  // Lấy dữ liệu product trực tiếp từ state truyền qua, không fetch từ API
+
+  // Lấy dữ liệu product trực tiếp từ state truyền qua
   const product = state?.product;
 
   // Các States quản lý tương tác giao diện
@@ -17,36 +20,40 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [selectedSku, setSelectedSku] = useState('');
 
-  // Khởi tạo thuộc tính (Màu & Size) mặc định dựa theo cấu trúc variants của Schema
+  // Khởi tạo thuộc tính (Màu & Size) mặc định dựa theo cấu trúc variants
   useEffect(() => {
-    console.log('Product data on ProductDetailPage:', product);
     if (product?.variants && product.variants.length > 0) {
-      // Tìm biến thể đầu tiên còn hàng và đang kích hoạt (isActive === true)
       const defaultVariant = product.variants.find(v => v.stock > 0 && v.isActive) || product.variants[0];
       if (defaultVariant) {
         setSelectedColor(defaultVariant.color);
         setSelectedSize(defaultVariant.size);
+        setSelectedSku(defaultVariant.sku || '');
       }
     }
   }, [product]);
 
+  // Cập nhật lại SKU khi người dùng thay đổi tổ hợp Màu sắc / Kích cỡ
+  useEffect(() => {
+    if (product?.variants && selectedColor && selectedSize) {
+      const matchVariant = product.variants.find(v => v.color === selectedColor && v.size === selectedSize);
+      if (matchVariant) {
+        setSelectedSku(matchVariant.sku || '');
+      }
+    }
+  }, [selectedColor, selectedSize, product]);
+
   // Fallback phòng trường hợp user reload trang làm mất state của React Router
   if (!product) {
     return (
-      <div style={{ 
-        minHeight: '100vh', background: '#f8f5ef', display: 'flex', flexDirection: 'column', 
-        alignItems: 'center', justifyContent: 'center', fontFamily: '"Cormorant Garamond", serif' 
-      }}>
-        <h2 style={{ color: '#1f1a14', fontSize: 20, marginBottom: 16, fontWeight: 400, letterSpacing: '0.04em' }}>
+      <div className="min-h-screen bg-[#f8f5ef] flex flex-col items-center justify-center font-serif px-4 text-center">
+        <h2 className="text-[#1f1a14] text-xl mb-4 tracking-wide font-normal">
           Không tìm thấy thông tin sản phẩm
         </h2>
-        <button 
+        <button
           onClick={() => navigate('/')}
-          style={{
-            padding: '12px 28px', background: '#b8935f', color: '#fff', border: 'none',
-            borderRadius: 8, cursor: 'pointer', letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: 11
-          }}
+          className="px-7 py-3 bg-[#b8935f] text-white rounded-lg cursor-pointer tracking-widest uppercase text-xs font-semibold hover:bg-[#a57f4c] transition"
         >
           Quay lại trang chủ
         </button>
@@ -54,15 +61,15 @@ export default function ProductDetailPage() {
     );
   }
 
-  // Trích xuất danh sách Màu sắc và Kích cỡ duy nhất từ Schema `product.variants`
+  // Trích xuất danh sách Màu sắc và Kích cỡ duy nhất từ product.variants
   const availableColors = product.variants ? [...new Set(product.variants.map(v => v.color).filter(Boolean))] : [];
   const availableSizes = product.variants ? [...new Set(product.variants.map(v => v.size).filter(Boolean))] : [];
 
-  // Tìm thông tin chi tiết của variant đang được người dùng chọn
+  // Tìm thông tin chi tiết của variant đang được chọn
   const currentVariant = product.variants?.find(v => v.color === selectedColor && v.size === selectedSize);
-  
-  // Xác định trạng thái kho hàng (Nếu không có variants thì check totalStock của sản phẩm)
-  const isOutOfStock = product.variants && product.variants.length > 0 
+
+  // Xác định trạng thái kho hàng
+  const isOutOfStock = product.variants && product.variants.length > 0
     ? (!currentVariant || currentVariant.stock === 0 || !currentVariant.isActive)
     : (product.totalStock === 0);
 
@@ -74,7 +81,7 @@ export default function ProductDetailPage() {
     if (type === 'plus') {
       if (product.variants && product.variants.length > 0 && currentVariant) {
         if (quantity >= currentVariant.stock) {
-          alert(`Sản phẩm này trong kho chỉ còn đúng ${currentVariant.stock} sản phẩm.`);
+          toast.error(`Sản phẩm này trong kho chỉ còn đúng ${currentVariant.stock} sản phẩm.`);
           return;
         }
       }
@@ -82,174 +89,145 @@ export default function ProductDetailPage() {
     }
   };
 
+  // Hàm xử lý chung khi nhấn nút thêm/mua hàng nhằm kiểm tra thuộc tính hợp lệ
+  const validateAndGetItem = () => {
+    if ((availableColors.length > 0 && !selectedColor) || (availableSizes.length > 0 && !selectedSize)) {
+      toast.error('Vui lòng chọn đầy đủ thuộc tính sản phẩm');
+      return null;
+    }
+    if (!selectedSku) {
+      toast.error('Tổ hợp mẫu mã này hiện không khả dụng');
+      return null;
+    }
+    return {
+      productId: product._id,
+      sku: selectedSku,
+      quantity: quantity,
+      color: selectedColor,
+      size: selectedSize,
+    };
+  };
+
+  const handleAddToCart = async () => {
+    const itemData = validateAndGetItem();
+    if (!itemData) return;
+
+    try {
+      await cartApi.addItem(itemData);
+      toast.success('Đã thêm vào giỏ hàng thành công');
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng');
+    }
+  };
+
+  const handleBuyNow = async () => {
+    const itemData = validateAndGetItem();
+    if (!itemData) return;
+
+    try {
+      await cartApi.addItem(itemData);
+      navigate('/cart');
+    } catch (error) {
+      console.error('Error buying now:', error);
+      toast.error('Có lỗi xảy ra khi tiến hành thanh toán');
+    }
+  };
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#f8f5ef',
-      fontFamily: '"Cormorant Garamond", "Libre Baskerville", Georgia, serif',
-      color: '#5e4a36',
-      paddingBottom: 80,
-    }}>
-      {/* Cấu hình CSS Global cho các hiệu ứng tương tác tinh tế của OLDMAN */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Libre+Baskerville&display=swap');
-        * { box-sizing: border-box; }
-        
-        .attr-btn {
-          height: 40px;
-          padding: 0 22px;
-          border: 1px solid #e7dccb;
-          background: #ffffff;
-          color: #5e4a36;
-          font-family: "Cormorant Garamond", serif;
-          font-size: 13px;
-          letter-spacing: 0.05em;
-          cursor: pointer;
-          border-radius: 8px;
-          transition: all 0.25s cubic-bezier(.4,0,.2,1);
-        }
-        .attr-btn:hover:not(.disabled):not(.active) {
-          border-color: #b8935f;
-          color: #b8935f;
-        }
-        .attr-btn.active {
-          border-color: #b8935f;
-          background: #f5efe6;
-          color: #1f1a14;
-          font-weight: 600;
-          box-shadow: 0 2px 8px rgba(184, 147, 95, 0.1);
-        }
-        .attr-btn.disabled {
-          border: 1px dashed #e7dccb;
-          color: #7b6753;
-          opacity: 0.4;
-          cursor: not-allowed;
-        }
-        
-        .btn-primary {
-          flex: 1; height: 50px; border: none; background: #b8935f; color: #ffffff;
-          font-family: "Cormorant Garamond", serif; font-size: 13px; font-weight: 600;
-          letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
-          border-radius: 12px; transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(184, 147, 95, 0.15);
-        }
-        .btn-primary:hover:not(:disabled) { background: #a57f4c; transform: translateY(-1px); }
-        .btn-primary:disabled { background: #e7dccb; color: #7b6753; cursor: not-allowed; box-shadow: none; }
-
-        .btn-secondary {
-          flex: 1; height: 50px; border: 1px solid #b8935f; background: transparent; color: #6f5433;
-          font-family: "Cormorant Garamond", serif; font-size: 13px; font-weight: 600;
-          letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
-          border-radius: 12px; transition: all 0.3s ease;
-        }
-        .btn-secondary:hover:not(:disabled) { background: #b8935f; color: #ffffff; transform: translateY(-1px); }
-        .btn-secondary:disabled { border-color: #e7dccb; color: #7b6753; cursor: not-allowed; }
-
-        .action-banner {
-          width: 100%; height: 46px; background: #1f1a14; color: #f8f5ef; border: none;
-          font-family: "Cormorant Garamond", serif; font-size: 12px; font-weight: 500;
-          letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
-          border-radius: 12px; transition: all 0.3s ease; margin-top: 20px;
-        }
-        .action-banner:hover { background: #b8935f; color: #ffffff; }
-      `}</style>
-
-      {/* Breadcrumb - Nhẹ nhàng, thanh lịch */}
-      <div style={{ padding: '24px 0 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#7b6753' }}>
-          <Link to="/" style={{ color: '#7b6753', textDecoration: 'none' }}>Trang chủ</Link>
-          <span style={{ margin: '0 10px' }}>/</span>
-          <span style={{ color: '#1f1a14' }}>{product.category_id?.name || 'Sản phẩm'}</span>
+    <div className="min-h-screen bg-[#f8f5ef] font-serif text-[#5e4a36] pb-20 selection:bg-[#b8935f]/20">
+      
+      {/* Thanh Breadcrumb Điều hướng */}
+      <div className="pt-6">
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 text-[11px] tracking-widest uppercase text-[#7b6753] flex items-center gap-2">
+          <Link to="/" className="hover:text-[#b8935f] transition-colors">Trang chủ</Link>
+          <span>/</span>
+          <span className="text-[#1f1a14] font-medium">{product.category_id?.name || 'Sản phẩm'}</span>
         </div>
       </div>
 
-      {/* Main Container */}
-      <div style={{ maxWidth: 1200, margin: '40px auto 0', padding: '0 32px', display: 'flex', gap: '56px', flexWrap: 'wrap' }}>
+      {/* Container Nội dung Chính */}
+      <div className="max-w-6xl mx-auto mt-10 px-6 sm:px-8 grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-14">
         
-        {/* Khối bên trái: Thư viện ảnh sản phẩm */}
-        <div style={{ flex: '1 1 500px', maxWidth: 540 }}>
-          {/* Ảnh chính lớn - Khung nền trắng chuẩn studio */}
-          <div style={{ 
-            background: '#ffffff', width: '100%', height: 560, borderRadius: '16px', overflow: 'hidden', 
-            border: '1px solid #e7dccb', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(31, 26, 20, 0.02)'
-          }}>
-            <img 
-              src={product.images && product.images[selectedImageIdx] ? product.images[selectedImageIdx].url : 'https://via.placeholder.com/600x700?text=OLDMAN'} 
-              alt={product.name} 
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        {/* Khối bên trái: Thư viện hình ảnh sản phẩm (Phân bổ 5 cột trên màn hình lớn) */}
+        <div className="md:col-span-6 lg:col-span-5 w-full max-w-lg mx-auto md:max-w-none">
+          {/* Ảnh lớn chính */}
+          <div className="bg-white w-full aspect-[4/5] rounded-2xl overflow-hidden border border-[#e7dccb] flex items-center justify-center shadow-sm">
+            <img
+              src={product.images?.[selectedImageIdx]?.url || 'https://via.placeholder.com/600x700?text=OLDMAN'}
+              alt={product.name}
+              className="w-full h-full object-cover transition-all duration-300"
             />
           </div>
 
-          {/* List ảnh nhỏ thumb lướt mượt */}
+          {/* Danh sách ảnh thumbnails phụ bên dưới */}
           {product.images && product.images.length > 1 && (
-            <div style={{ display: 'flex', gap: 12, marginTop: 16, overflowX: 'auto', paddingBottom: 4 }}>
+            <div className="flex gap-3 mt-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-200">
               {product.images.map((img, idx) => (
-                <div 
+                <button
                   key={img._id || idx}
                   onClick={() => setSelectedImageIdx(idx)}
-                  style={{
-                    width: 80, height: 80, borderRadius: '8px', overflow: 'hidden',
-                    border: idx === selectedImageIdx ? '1.5px solid #b8935f' : '1px solid #e7dccb',
-                    cursor: 'pointer', padding: 3, background: '#ffffff', transition: 'all 0.2s'
-                  }}
+                  className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-white p-0.5 transition-all ${
+                    idx === selectedImageIdx 
+                      ? 'border-2 border-[#b8935f] shadow-sm' 
+                      : 'border border-[#e7dccb] hover:border-[#b8935f]'
+                  }`}
                 >
-                  <img src={img.url} alt="thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
-                </div>
+                  <img src={img.url} alt="thumbnail" className="w-full h-full object-cover rounded-md" />
+                </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Khối bên phải: Bảng thông tin chi tiết */}
-        <div style={{ flex: '1 1 450px', display: 'flex', flexDirection: 'column' }}>
+        {/* Khối bên phải: Chi tiết thông tin cấu hình sản phẩm (Phân bổ 6-7 cột) */}
+        <div className="md:col-span-6 lg:col-span-7 flex flex-col">
           
           {/* Tên sản phẩm */}
-          <h1 style={{ 
-            fontSize: 32, fontWeight: 400, color: '#1f1a14', margin: '0 0 12px 0', 
-            fontFamily: '"Cormorant Garamond", serif', letterSpacing: '0.02em', lineHeight: 1.25,
-            textTransform: 'capitalize'
-          }}>
+          <h1 className="text-3xl md:text-4xl font-normal text-[#1f1a14] mb-3 tracking-wide capitalize leading-tight">
             {product.name}
           </h1>
 
-          {/* Trạng thái hàng hóa dựa theo Schema */}
-          <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#7b6753', marginBottom: 24 }}>
-            <span>Trạng thái: 
-              <span style={{ color: isOutOfStock ? '#d9534f' : '#b8935f', fontWeight: 600, marginLeft: 6 }}>
-                {isOutOfStock ? 'Hết hàng' : 'Còn hàng'}
-              </span>
+          {/* Trạng thái kho hàng */}
+          <div className="text-[11px] tracking-widest uppercase text-[#7b6753] mb-5">
+            Trạng thái: 
+            <span className={`ml-1.5 font-bold ${isOutOfStock ? 'text-red-500' : 'text-[#b8935f]'}`}>
+              {isOutOfStock ? 'Hết hàng' : 'Còn hàng'}
             </span>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid #e7dccb', margin: '0 0 24px 0' }} />
+          <hr className="border-t border-[#e7dccb] mb-6" />
 
-          {/* Khu vực giá cả */}
-          <div style={{ background: '#f5efe6', padding: '20px 24px', borderRadius: '16px', marginBottom: 28, border: '1px solid #e7dccb' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
-              <span style={{ fontSize: 24, fontWeight: 500, color: '#b8935f', fontFamily: '"Cormorant Garamond", serif', letterSpacing: '0.02em' }}>
+          {/* Khối hiển thị Giá */}
+          <div className="bg-[#f5efe6] p-5 rounded-2xl mb-6 border border-[#e7dccb]">
+            <div className="flex items-baseline gap-4">
+              <span className="text-2xl md:text-3xl font-medium text-[#b8935f] tracking-wide">
                 {formatPrice(product.discountPrice || product.basePrice)}
               </span>
               {product.discountPrice < product.basePrice && (
-                <span style={{ fontSize: 15, color: '#7b6753', textDecoration: 'line-through', fontFamily: '"Cormorant Garamond", serif' }}>
+                <span className="text-base text-[#7b6753] line-through">
                   {formatPrice(product.basePrice)}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Render Bộ chọn màu (Chỉ hiển thị nếu mảng variants có dữ liệu màu sắc) */}
+          {/* Bộ chọn Màu Sắc */}
           {availableColors.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <span style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7b6753', display: 'block', marginBottom: 10 }}>
-                Màu sắc: <strong style={{ color: '#1f1a14', marginLeft: 4, textTransform: 'none', fontFamily: 'sans-serif', fontSize: 13 }}>{selectedColor}</strong>
+            <div className="mb-6">
+              <span className="text-[11px] tracking-widest uppercase text-[#7b6753] block mb-2.5">
+                Màu sắc: <strong className="text-[#1f1a14] ml-1 font-sans text-xs tracking-normal">{selectedColor}</strong>
               </span>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div className="flex flex-wrap gap-2.5">
                 {availableColors.map(color => (
-                  <button 
-                    key={color} 
-                    className={`attr-btn ${selectedColor === color ? 'active' : ''}`}
+                  <button
+                    key={color}
                     onClick={() => { setSelectedColor(color); setQuantity(1); }}
+                    className={`h-10 px-5 border text-xs tracking-wider rounded-lg transition-all font-sans ${
+                      selectedColor === color
+                        ? 'border-[#b8935f] bg-[#f5efe6] text-[#1f1a14] font-semibold shadow-sm'
+                        : 'border-[#e7dccb] bg-white text-[#5e4a36] hover:border-[#b8935f]'
+                    }`}
                   >
                     {color}
                   </button>
@@ -258,23 +236,29 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          {/* Render Bộ chọn size (Tự động disable tổ hợp hết hàng) */}
+          {/* Bộ chọn Kích Thước (Tự động mờ/disabled tổ hợp hết hàng) */}
           {availableSizes.length > 0 && (
-            <div style={{ marginBottom: 28 }}>
-              <span style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7b6753', display: 'block', marginBottom: 10 }}>
+            <div className="mb-6">
+              <span className="text-[11px] tracking-widest uppercase text-[#7b6753] block mb-2.5">
                 Kích thước:
               </span>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div className="flex flex-wrap gap-2.5">
                 {availableSizes.map(size => {
                   const matchVariant = product.variants?.find(v => v.color === selectedColor && v.size === size);
                   const disabled = !matchVariant || matchVariant.stock === 0 || !matchVariant.isActive;
 
                   return (
-                    <button 
-                      key={size} 
-                      className={`attr-btn ${selectedSize === size ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
+                    <button
+                      key={size}
                       disabled={disabled}
                       onClick={() => { setSelectedSize(size); setQuantity(1); }}
+                      className={`h-10 px-5 border text-xs tracking-wider rounded-lg transition-all font-sans ${
+                        selectedSize === size
+                          ? 'border-[#b8935f] bg-[#f5efe6] text-[#1f1a14] font-semibold shadow-sm'
+                          : disabled
+                            ? 'border-dashed border-[#e7dccb] text-[#7b6753] opacity-40 cursor-not-allowed'
+                            : 'border-[#e7dccb] bg-white text-[#5e4a36] hover:border-[#b8935f]'
+                      }`}
                     >
                       {size}
                     </button>
@@ -284,60 +268,58 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          {/* Bộ tăng giảm số lượng */}
-          <div style={{ marginBottom: 36 }}>
-            <span style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7b6753', display: 'block', marginBottom: 10 }}>
+          {/* Khối chọn Số lượng */}
+          <div className="mb-8">
+            <span className="text-[11px] tracking-widest uppercase text-[#7b6753] block mb-2.5">
               Số lượng:
             </span>
-            <div style={{ 
-              display: 'inline-flex', alignItems: 'center', background: '#ffffff', 
-              border: '1px solid #e7dccb', borderRadius: '8px', padding: '2px'
-            }}>
-              <button 
+            <div className="inline-flex items-center bg-white border border-[#e7dccb] rounded-lg p-0.5 shadow-sm">
+              <button
                 onClick={() => handleQuantityChange('minus')}
-                style={{ width: 36, height: 36, border: 'none', background: 'transparent', cursor: 'pointer', color: '#1f1a14', fontSize: 16 }}
-              >-</button>
-              <div style={{ width: 44, textAlign: 'center', fontSize: 14, color: '#1f1a14', fontWeight: 500, fontFamily: 'sans-serif' }}>
+                className="w-9 h-9 flex items-center justify-center border-none bg-transparent cursor-pointer text-[#1f1a14] hover:text-[#b8935f] transition-colors"
+              >
+                <Minus size={14} />
+              </button>
+              <div className="w-12 text-center font-sans text-sm font-medium text-[#1f1a14]">
                 {quantity}
               </div>
-              <button 
+              <button
                 onClick={() => handleQuantityChange('plus')}
-                style={{ width: 36, height: 36, border: 'none', background: 'transparent', cursor: 'pointer', color: '#1f1a14', fontSize: 16 }}
-              >+</button>
+                className="w-9 h-9 flex items-center justify-center border-none bg-transparent cursor-pointer text-[#1f1a14] hover:text-[#b8935f] transition-colors"
+              >
+                <Plus size={14} />
+              </button>
             </div>
           </div>
 
-          {/* Nhóm CTA Buttons */}
-          <div style={{ display: 'flex', gap: 16 }}>
-            <button 
-              className="btn-secondary"
+          {/* Nhóm Nút Hành Động Mua Hàng */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={handleAddToCart}
               disabled={isOutOfStock}
-              onClick={() => alert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng.`)}
+              className="flex-1 h-12 border border-[#b8935f] bg-transparent text-[#6f5433] text-xs font-semibold tracking-widest uppercase rounded-xl transition-all duration-300 flex items-center justify-center gap-2 enabled:hover:bg-[#b8935f] enabled:hover:text-white enabled:hover:-translate-y-0.5 disabled:border-[#e7dccb] disabled:text-[#7b6753] disabled:cursor-not-allowed"
             >
+              <ShoppingBag size={16} />
               Thêm vào giỏ
             </button>
-            
-            <button 
-              className="btn-primary"
+
+            <button
+              onClick={handleBuyNow}
               disabled={isOutOfStock}
-              onClick={() => alert(`Tiến hành đặt mua ngay sản phẩm.`)}
+              className="flex-1 h-12 border-none bg-[#b8935f] text-white text-xs font-semibold tracking-widest uppercase rounded-xl transition-all duration-300 shadow-md shadow-[#b8935f]/15 flex items-center justify-center gap-2 enabled:hover:bg-[#a57f4c] enabled:hover:-translate-y-0.5 disabled:bg-[#e7dccb] disabled:text-[#7b6753] disabled:cursor-not-allowed disabled:shadow-none"
             >
+              <CreditCard size={16} />
               Mua ngay
             </button>
           </div>
 
-          {/* Nút hành động ưu đãi */}
-          {/* <button className="action-banner">
-            Click vào đây để nhận ưu đãi hội viên OLDMAN
-          </button> */}
-
-          {/* Khối mô tả chi tiết sản phẩm */}
+          {/* Khối Mô tả chi tiết sản phẩm */}
           {product.description && (
-            <div style={{ marginTop: 40, borderTop: '1px solid #e7dccb', paddingTop: 24 }}>
-              <h3 style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#1f1a14', margin: '0 0 12px 0' }}>
+            <div className="mt-10 border-t border-[#e7dccb] pt-6">
+              <h3 className="text-xs tracking-widest uppercase text-[#1f1a14] font-semibold mb-3">
                 Mô tả sản phẩm
               </h3>
-              <p style={{ fontSize: 14, lineHeight: 1.6, color: '#5e4a36', margin: 0, fontFamily: 'sans-serif' }}>
+              <p className="text-sm font-sans text-[#5e4a36] leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
             </div>

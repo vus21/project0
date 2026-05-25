@@ -24,9 +24,9 @@ const orderSchema = new mongoose.Schema(
       phone: { type: String, required: true },
       city: { type: String, required: true },
       ward: { type: String, required: true },
-      detail: { type: String, required: true },
-      note: String
+      detail: { type: String, required: true }
     },
+    note: String,
     
     paymentMethod: { type: String, enum: Object.values(PAYMENT_METHOD), default: PAYMENT_METHOD.COD },
     paymentStatus: { type: String, enum: Object.values(PAYMENT_STATUS), default: PAYMENT_STATUS.PENDING },

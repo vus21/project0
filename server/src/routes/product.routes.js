@@ -20,8 +20,8 @@ router.post('/:productId/reviews', protect, reviewController.createReview);
 
 // Admin routes
 // Tạm thời bỏ chặn để test bằng Postman
-// router.use(protect);
-// router.use(restrictTo(USER_ROLES.ADMIN));
+router.use(protect);
+router.use(restrictTo(USER_ROLES.ADMIN));
 
 router.post('/', uploadProductImages, createProductValidation, validate, productController.createProduct);
 router.put('/:id', uploadProductImages, updateProductValidation, validate, productController.updateProduct);

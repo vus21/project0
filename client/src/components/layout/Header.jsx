@@ -17,7 +17,6 @@ export default function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { summary } = useCart();
   const navigate = useNavigate();
-
   return (
     <header className="sticky top-0 z-50 border-b border-[#eadfce] bg-[#f8f5ef]/95 backdrop-blur-xl">
 
@@ -40,7 +39,7 @@ export default function Header() {
               <img
                 src={oldmanLogo}
                 alt="OLDMAN"
-                className="w-12 h-12 object-contain"
+                className="w-16 h-16 object-contain"
               />
 
               <div className="hidden sm:block">

@@ -23,7 +23,7 @@ router.get('/seed', authController.seedUser);
 // ========================
 // PROTECTED ROUTES (Yêu cầu đăng nhập)
 // ========================
-// router.use(protect); 
+router.use(protect);
 // Middleware bảo vệ tất cả routes bên dưới
 
 router.get('/profile', authController.getProfile);
