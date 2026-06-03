@@ -19,6 +19,8 @@ router.post('/register', registerValidation, validate, authController.register);
 router.post('/login', loginValidation, validate, authController.login);
 router.post('/logout', authController.logout);
 router.post('/refresh-token', authController.refreshToken);
+router.get('/verify-email', authController.verifyEmail);
+router.post('/resend-verification', authController.resendVerification);
 router.get('/seed', authController.seedUser);
 // ========================
 // PROTECTED ROUTES (Yêu cầu đăng nhập)

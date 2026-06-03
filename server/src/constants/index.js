@@ -37,8 +37,8 @@ export const PAYMENT_METHOD = {
 };
 
 export const DISCOUNT_TYPE = {
-  FIXED: 'fixed',
-  PERCENT: 'percent',
+  FIXED: 'FIXED',
+  PERCENT: 'PERCENT',
 };
 
 export const SHIPPING_THRESHOLD = 500000;

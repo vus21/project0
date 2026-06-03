@@ -18,8 +18,8 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       await registerAuth(data.name, data.email, data.password, data.phone);
-      toast.success('Đăng ký thành công!');
-      navigate('/');
+      toast.success('Đăng ký thành công! Hãy kiểm tra email để xác thực tài khoản.');
+      navigate(`/verify-email-notice?email=${encodeURIComponent(data.email)}`);
     } catch (error) {
       toast.error(error.message || 'Đăng ký thất bại');
     } finally {

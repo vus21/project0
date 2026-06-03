@@ -6,6 +6,8 @@ import UserLayout from '../components/layout/UserLayout';
 import AdminLayout from '../components/layout/AdminLayout';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
+import VerifyEmailNoticePage from '../pages/auth/VerifyEmailNoticePage';
+import VerifyEmailPage from '../pages/auth/VerifyEmailPage';
 import HomePage from '../pages/shop/HomePage';
 import DashboardPage from '../pages/admin/DashboardPage';
 import ProductsPage from '../pages/admin/ProductsPage';
@@ -21,11 +23,15 @@ import ProductDetailPage from '../pages/shop/ProductDetails';
 import CheckoutPage from '../pages/shop/CheckoutPage';
 import CartPage from '../pages/shop/CartPage';
 import ProfilePage from '../pages/auth/ProfilePage';
+import VoucherPage from '../pages/admin/VoucherPage';
+import WishListPage from '../pages/shop/WishListPage';
 export default function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email-notice" element={<VerifyEmailNoticePage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route element={<UserLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<AllProductsPage />} />
@@ -37,7 +43,7 @@ export default function AppRouter() {
 
           <Route path="/cart" element={<CartPage />} />
           <Route path="/orders" element={<div>Orders Page (Coming soon)</div>} />
-          <Route path="/wishlist" element={<div>Wishlist Page (Coming soon)</div>} />
+          <Route path="/wishlist" element={<WishListPage />} />
           <Route path="/address" element={<div>Address Page (Coming soon)</div>} />
         </Route>
       </Route>
@@ -56,8 +62,8 @@ export default function AppRouter() {
           <Route path="/admin/categories/new" element={<CategoriesFormPage />} />
           <Route path="/admin/categories/:id/edit" element={<CategoriesFormPage />} />
           <Route path="/admin/users" element={<UserPage />} />
-          <Route path="/admin/users/:id/edit" element={<div className="p-8 text-xl font-bold">Sửa Người dùng (Coming soon)</div>} />
-          <Route path="/admin/vouchers" element={<div className="p-8 text-xl font-bold">Quản lý Voucher (Coming soon)</div>} />
+          {/* <Route path="/admin/users/:id/edit" element={<div className="p-8 text-xl font-bold">Sửa Người dùng (Coming soon)</div>} /> */}
+          <Route path="/admin/vouchers" element={<VoucherPage/>} />
         </Route>
       </Route>
 

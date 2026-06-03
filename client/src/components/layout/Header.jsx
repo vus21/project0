@@ -126,7 +126,7 @@ export default function Header() {
 
             {/* WISHLIST */}
             <Link
-              to="/profile/wishlist"
+              to="/wishlist"
               className="relative text-[#7b6753] hover:text-[#1f1a14] transition"
             >
               <Heart size={22} />

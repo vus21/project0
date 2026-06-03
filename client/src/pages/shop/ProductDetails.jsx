@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { cartApi } from '../../api/cartApi';
-import { Minus, Plus, ShoppingBag, CreditCard, ArrowLeft } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, CreditCard, ArrowLeft, Heart } from 'lucide-react';
+import { wishlistApi } from '../../api/wishlistApi';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
@@ -16,6 +17,7 @@ export default function ProductDetailPage() {
   const product = state?.product;
 
   // Các States quản lý tương tác giao diện
+  const [isWishlist, setIsWishlist] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
@@ -43,7 +45,22 @@ export default function ProductDetailPage() {
       }
     }
   }, [selectedColor, selectedSize, product]);
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (!product?._id) return;
+      try {
+        const res = await wishlistApi.getWishList();
+        const wishlist = res.data?.wishlist || [];
+        // Kiểm tra xem ID của sản phẩm này có trong danh sách yêu thích không
+        const isLiked = wishlist.some(item => item._id === product._id);
+        setIsWishlist(isLiked);
+      } catch (error) {
+        console.error('Lỗi khi kiểm tra trạng thái yêu thích:', error);
+      }
+    };
 
+    checkWishlistStatus();
+  }, [product]);
   // Fallback phòng trường hợp user reload trang làm mất state của React Router
   if (!product) {
     return (
@@ -88,7 +105,27 @@ export default function ProductDetailPage() {
       setQuantity(prev => prev + 1);
     }
   };
-
+  const handleToggleWishlist = async () => {
+    if (!product?._id) return;
+    try {
+      // Gọi API toggle của bạn
+      await wishlistApi.toggleWishlist(product._id);
+      
+      // Cập nhật trạng thái giao diện và thông báo
+      setIsWishlist(prev => {
+        const nextState = !prev;
+        if (nextState) {
+          toast.success('Đã thêm vào danh sách yêu thích');
+        } else {
+          toast.success('Đã xóa khỏi danh sách yêu thích');
+        }
+        return nextState;
+      });
+    } catch (error) {
+      console.error('Lỗi khi cập nhật danh sách yêu thích:', error);
+      toast.error('Vui lòng đăng nhập để sử dụng tính năng này');
+    }
+  };
   // Hàm xử lý chung khi nhấn nút thêm/mua hàng nhằm kiểm tra thuộc tính hợp lệ
   const validateAndGetItem = () => {
     if ((availableColors.length > 0 && !selectedColor) || (availableSizes.length > 0 && !selectedSize)) {
@@ -184,9 +221,26 @@ export default function ProductDetailPage() {
         <div className="md:col-span-6 lg:col-span-7 flex flex-col">
           
           {/* Tên sản phẩm */}
-          <h1 className="text-3xl md:text-4xl font-normal text-[#1f1a14] mb-3 tracking-wide capitalize leading-tight">
-            {product.name}
-          </h1>
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <h1 className="text-3xl md:text-4xl font-normal text-[#1f1a14] tracking-wide capitalize leading-tight flex-1">
+              {product.name}
+            </h1>
+
+            <button 
+              onClick={handleToggleWishlist}
+              className="mt-1 flex-shrink-0 w-10 h-10 border border-[#e7dccb] rounded-full flex items-center justify-center bg-white cursor-pointer transition-all hover:border-[#b8935f] hover:shadow-sm"
+              title={isWishlist ? "Xóa khỏi danh sách yêu thích" : "Thêm vào danh sách yêu thích"}
+            >
+              <Heart 
+                size={20} 
+                className={`transition-colors ${
+                  isWishlist 
+                    ? 'fill-[#b8935f] text-[#b8935f]' 
+                    : 'text-[#7b6753]'
+                }`} 
+              />
+            </button>
+          </div>
 
           {/* Trạng thái kho hàng */}
           <div className="text-[11px] tracking-widest uppercase text-[#7b6753] mb-5">

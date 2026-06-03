@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { addressApi } from '../../api/addressApi';
 import { orderApi } from '../../api/orderApi';
 import { cartApi } from '../../api/cartApi.js';
+import { voucherApi } from '../../api/voucherApi'; // ◄ 1. THÊM IMPORT VOUCHER API
 import { ArrowLeft, MapPin, CreditCard, Ticket, NotepadText, ShieldCheck } from 'lucide-react';
 
 function formatPrice(price) {
@@ -92,6 +93,13 @@ export default function CheckoutPage() {
         quantity: newQty
       });
       setCartItems(prev => prev.map(i => i.sku === item.sku ? { ...i, quantity: newQty } : i));
+      
+      // Hủy voucher đã áp dụng nếu số lượng thay đổi để ép user áp dụng lại (tránh lỗi tổng tiền tối thiểu)
+      if (appliedVoucher) {
+        setAppliedVoucher(null);
+        setVoucherCode('');
+        setVoucherError('Giỏ hàng đã thay đổi, vui lòng áp dụng lại mã voucher nếu có.');
+      }
     } catch (error) {
       alert('Không thể cập nhật số lượng sản phẩm. Vui lòng thử lại.');
     }
@@ -103,6 +111,11 @@ export default function CheckoutPage() {
       const productId = product?._id || product;
       await cartApi.removeItem({ productId, sku });
       setCartItems(prev => prev.filter(i => i.sku !== sku));
+      
+      if (appliedVoucher) {
+        setAppliedVoucher(null);
+        setVoucherCode('');
+      }
     } catch (error) {
       alert('Lỗi khi xóa sản phẩm.');
     }
@@ -126,7 +139,8 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleApplyVoucher = (e) => {
+  // --- 2. THAY ĐỔI LOGIC ÁP DỤNG VOUCHER QUA API BIẾN ĐỘNG ---
+  const handleApplyVoucher = async (e) => {
     e.preventDefault();
     setVoucherError('');
 
@@ -135,21 +149,48 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (voucherCode.toUpperCase() === 'OLDMAN10') {
-      setAppliedVoucher({
-        code: 'OLDMAN10',
-        discountType: 'PERCENTAGE',
-        discountValue: 10,
-        amount: Math.round(itemPrice * 0.1)
+    try {
+      // Gọi API applyVoucher lên backend
+      const res = await voucherApi.applyVoucher({
+        code: voucherCode.trim(),
+        orderAmount: itemPrice
       });
-    } else {
-      setVoucherError('Mã giảm giá không hợp lệ hoặc đã hết hạn.');
+      
+      // Lấy data voucher từ phản hồi thành công của API
+      const voucherData = res.data?.voucher || res.data;
+      // Lưu thông tin voucher vào state
+      setAppliedVoucher(voucherData);
+    } catch (error) {
+      console.error('Lỗi áp dụng mã voucher:', error);
+      const msgError = error.response?.data?.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn.';
+      setVoucherError(msgError);
+      setAppliedVoucher(null);
     }
   };
 
+  // --- 3. ĐỊNH NGHĨA PHƯƠNG THỨC TÍNH TOÁN THEO CẤU TRÚC BACKEND ---
   const itemPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const shippingPrice = itemPrice > 500000 ? 0 : 30000;
-  const discountPrice = appliedVoucher ? (appliedVoucher.amount || 0) : 0;
+
+  // Tính toán số tiền được giảm theo logic schema của Backend: FIXED hoặc PERCENT
+  const getDiscountAmount = () => {
+    if (!appliedVoucher) return 0;
+    
+    const { discountType, discountValue, maxDiscount } = appliedVoucher;
+    
+    if (discountType === 'FIXED') {
+      return Math.min(discountValue, itemPrice);
+    } 
+    
+    if (discountType === 'PERCENT') {
+      const calculatedDiscount = (itemPrice * discountValue) / 100;
+      return maxDiscount ? Math.min(calculatedDiscount, maxDiscount) : calculatedDiscount;
+    }
+    
+    return 0;
+  };
+
+  const discountPrice = getDiscountAmount();
   const totalPrice = itemPrice + shippingPrice - discountPrice;
 
   const handlePlaceOrder = async () => {
@@ -186,6 +227,7 @@ export default function CheckoutPage() {
       },
       note: note,
       paymentMethod: paymentMethod,
+      // Gửi mã voucher và thông tin giảm giá đi kèm sang API Đặt hàng
       voucher: appliedVoucher ? {
         code: appliedVoucher.code,
         discountType: appliedVoucher.discountType,
@@ -194,11 +236,13 @@ export default function CheckoutPage() {
       itemPrice: itemPrice,
       shippingPrice: shippingPrice,
       discountPrice: discountPrice,
-      totalPrice: totalPrice
+      totalPrice: totalPrice,
+      voucherCode: appliedVoucher ? appliedVoucher.code : undefined
     };
 
     try {
       await orderApi.placeOrder(orderPayload);
+      console.log('Đặt hàng thành công:', orderPayload);
       alert('Đặt hàng thành công! Cảm ơn quý khách đã lựa chọn OLDMAN.');
       navigate('/orders');
     } catch (error) {
@@ -479,7 +523,7 @@ export default function CheckoutPage() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Ví dụ: OLDMAN10"
+                  placeholder="Ví dụ: QUYONG2026"
                   value={voucherCode}
                   onChange={(e) => setVoucherCode(e.target.value)}
                   className="flex-1 px-3 py-2 border border-[#e7dccb] rounded-lg text-sm font-sans outline-none uppercase tracking-wider focus:border-[#b8935f]"
@@ -494,7 +538,7 @@ export default function CheckoutPage() {
               {voucherError && <p className="text-xs text-red-500 font-sans mt-1.5">{voucherError}</p>}
               {appliedVoucher && (
                 <p className="text-xs text-emerald-600 font-sans mt-1.5 flex items-center gap-1 font-medium">
-                  <ShieldCheck size={14} /> Đã kích hoạt mã ưu đãi {appliedVoucher.code} (-{appliedVoucher.discountValue}%)
+                  <ShieldCheck size={14} /> Đã kích hoạt mã ưu đãi {appliedVoucher.code} ({appliedVoucher.discountType === 'PERCENT' ? `-${appliedVoucher.discountValue}%` : `-${formatPrice(appliedVoucher.discountValue)}`})
                 </p>
               )}
             </form>

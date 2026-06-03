@@ -16,6 +16,7 @@ const voucherSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
 // Kiểm tra Voucher còn hiệu lực hay không
 voucherSchema.methods.isValid = function () {
   return (

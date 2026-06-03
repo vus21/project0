@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema(
     },
     phone: { type: String, trim: true },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String, select: false }
   },
   { timestamps: true }
 );

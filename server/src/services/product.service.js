@@ -11,7 +11,70 @@ class ProductService {
       sort, page = 1, limit = DEFAULT_PAGE_SIZE 
     } = queryParams;
 
+    // const filter = {  };
     const filter = { isActive: true };
+    
+    if (q) {
+      filter.name = { $regex: q, $options: 'i' };
+    }
+
+    if (category) {
+      if (category.match(/^[0-9a-fA-F]{24}$/)) {
+        filter.category_id = category;
+      } else {
+        const cat = await Category.findOne({ slug: category });
+        if (cat) filter.category_id = cat._id;
+      }
+    }
+
+    if (minPrice || maxPrice) {
+      filter.basePrice = {};
+      if (minPrice) filter.basePrice.$gte = Number(minPrice);
+      if (maxPrice) filter.basePrice.$lte = Number(maxPrice);
+    }
+
+    if (rating) filter.rating = { $gte: Number(rating) };
+    if (inStock === 'true') filter.totalStock = { $gt: 0 };
+    if (color) filter['variants.color'] = color;
+    if (size) filter['variants.size'] = size;
+
+    let sortObj = { createdAt: -1 };
+    if (sort === 'price_asc') sortObj = { basePrice: 1 };
+    else if (sort === 'price_desc') sortObj = { basePrice: -1 };
+    else if (sort === 'best_seller') sortObj = { sold: -1 };
+    else if (sort === 'top_rated') sortObj = { rating: -1 };
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate('category_id', 'name slug')
+        .sort(sortObj)
+        .skip(skip)
+        .limit(Number(limit)),
+      Product.countDocuments(filter)
+    ]);
+
+    const totalPages = Math.ceil(total / Number(limit));
+
+    return {
+      products,
+      pagination: {
+        total,
+        page: Number(page),
+        totalPages,
+        hasNext: Number(page) < totalPages,
+        hasPrev: Number(page) > 1
+      }
+    };
+  }
+  async getAllProducts(queryParams) {
+    const { 
+      q, category, minPrice, maxPrice, rating, color, size, inStock, 
+      sort, page = 1, limit = DEFAULT_PAGE_SIZE 
+    } = queryParams;
+
+    const filter = { };
 
     if (q) {
       filter.name = { $regex: q, $options: 'i' };
@@ -67,7 +130,6 @@ class ProductService {
       }
     };
   }
-
   async getProductBySlug(slug) {
     const product = await Product.findBySlug(slug);
     if (!product || !product.isActive) {

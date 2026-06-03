@@ -13,13 +13,26 @@ const cookieOptions = {
 
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, phone } = req.body;
-  const user = await authService.register(name, email, password, phone);
+  const result = await authService.register(name, email, password, phone);
+  ApiResponse.success(res, result, result.message, HTTP_STATUS.CREATED);
+});
 
-  // Tự động đăng nhập sau khi đăng ký
-  const { accessToken, refreshToken } = await authService.login(email, password);
+export const verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.query;
+  if (!token) {
+    return ApiResponse.error(res, 'Token xác thực không được cung cấp', HTTP_STATUS.BAD_REQUEST);
+  }
+  const result = await authService.verifyEmail(token);
+  ApiResponse.success(res, result, result.message);
+});
 
-  res.cookie('refreshToken', refreshToken, cookieOptions);
-  ApiResponse.success(res, { user, accessToken }, 'Đăng ký thành công', HTTP_STATUS.CREATED);
+export const resendVerification = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return ApiResponse.error(res, 'Vui lòng cung cấp email', HTTP_STATUS.BAD_REQUEST);
+  }
+  const result = await authService.resendVerification(email);
+  ApiResponse.success(res, result, result.message);
 });
 
 export const seedUser = asyncHandler(async (req, res) => {

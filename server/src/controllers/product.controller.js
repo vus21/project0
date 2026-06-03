@@ -7,6 +7,11 @@ export const getProducts = asyncHandler(async (req, res) => {
   const result = await productService.getProducts(req.query);
   ApiResponse.success(res, result.products, 'Lấy danh sách sản phẩm thành công', HTTP_STATUS.OK, result.pagination);
 });
+export const getAllProducts = asyncHandler(async (req, res) => {
+  const result = await productService.getAllProducts(req.query);
+  ApiResponse.success(res, result.products, 'Lấy danh sách sản phẩm thành công', HTTP_STATUS.OK, result.pagination);
+});
+
 
 export const getProductBySlug = asyncHandler(async (req, res) => {
   const product = await productService.getProductBySlug(req.params.slug);

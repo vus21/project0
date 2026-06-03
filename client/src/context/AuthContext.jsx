@@ -44,9 +44,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password, phone) => {
     const res = await axiosInstance.post('/auth/register', { name, email, password, phone });
-    localStorage.setItem('accessToken', res.data.accessToken);
-    setUser(res.data.user);
-    return res.data.user;
+    // Không tự đăng nhập — user cần xác thực email trước
+    return res.data; // trả về { message }
   };
 
   const logout = async () => {

@@ -1,3 +1,5 @@
+import { axiosInstance } from './axiosInstance';
+
 export const authApi = {
   register: (data) => axiosInstance.post('/auth/register', data),
   login: (data) => axiosInstance.post('/auth/login', data),
@@ -9,4 +11,6 @@ export const authApi = {
   uploadAvatar: (formData) => axiosInstance.post('/auth/avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  verifyEmail: (token) => axiosInstance.get(`/auth/verify-email?token=${token}`),
+  resendVerification: (email) => axiosInstance.post('/auth/resend-verification', { email }),
 };

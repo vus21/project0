@@ -11,6 +11,7 @@ const router = Router();
 
 // Public routes (có thể lấy user ID qua optionalAuth nếu user đang đăng nhập)
 router.get('/', optionalAuth, productController.getProducts);
+router.get('/all', optionalAuth, productController.getAllProducts); // Route mới để lấy tất cả sản phẩm, bao gồm cả inactive, chỉ dùng cho admin
 router.get('/:slug', optionalAuth, productController.getProductBySlug);
 router.get('/:id/related', productController.getRelatedProducts);
 

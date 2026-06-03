@@ -30,7 +30,7 @@ export default function ProductsPage() {
     try {
       setIsLoading(true);
 
-      const res = await productApi.getAll({
+      const res = await productApi.getAllAdmin({
         limit: 100
       });
 
@@ -196,6 +196,7 @@ export default function ProductsPage() {
                   </td>
                 </tr>
               ) : (
+        
                 filteredProducts.map((product) => {
                   const finalPrice =
                     product?.discountPrice &&
@@ -301,21 +302,21 @@ export default function ProductsPage() {
                       {/* Status */}
                       <td className="px-6 py-4 text-center">
                         {product?.isActive ? (
-                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          <button onClick={async () => { await productApi.update(product._id, { isActive: false }), fetchProducts()}} className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                             <CheckCircle
                               size={14}
                               className="mr-1.5"
                             />
                             Active
-                          </span>
+                          </button>
                         ) : (
-                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <button onClick={async () => {await productApi.update(product._id, { isActive: true }), fetchProducts()}} className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                             <XCircle
                               size={14}
                               className="mr-1.5"
                             />
                             Inactive
-                          </span>
+                          </button>
                         )}
                       </td>
 
