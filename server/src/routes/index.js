@@ -10,6 +10,7 @@ import reviewRoutes from './review.routes.js';
 import wishlistRoutes from './wishlist.routes.js';
 import addressRoutes from './address.routes.js';
 import adminRoutes from './admin.routes.js';
+import chatbotRoutes from './chatbot.js';
 
 const router = Router();
 
@@ -29,9 +30,10 @@ router.use('/cart', cartRoutes);
 router.use('/vouchers', voucherRoutes);
 router.use('/orders', orderRoutes);
 router.use('/inventory', inventoryRoutes);
-router.use('/reviews', reviewRoutes);
+// router.use('/reviews', reviewRoutes);
 router.use('/wishlist', wishlistRoutes);
 router.use('/addresses', addressRoutes);
 router.use('/admin', adminRoutes);
+router.use('/chatbot', chatbotRoutes);
 
 export default router;

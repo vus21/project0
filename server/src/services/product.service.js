@@ -6,14 +6,14 @@ import { cloudinaryConfig } from '../config/cloudinary.js';
 
 class ProductService {
   async getProducts(queryParams) {
-    const { 
-      q, category, minPrice, maxPrice, rating, color, size, inStock, 
-      sort, page = 1, limit = DEFAULT_PAGE_SIZE 
+    const {
+      q, category, minPrice, maxPrice, rating, color, size, inStock,
+      sort, page = 1, limit = DEFAULT_PAGE_SIZE
     } = queryParams;
 
     // const filter = {  };
     const filter = { isActive: true };
-    
+
     if (q) {
       filter.name = { $regex: q, $options: 'i' };
     }
@@ -69,12 +69,12 @@ class ProductService {
     };
   }
   async getAllProducts(queryParams) {
-    const { 
-      q, category, minPrice, maxPrice, rating, color, size, inStock, 
-      sort, page = 1, limit = DEFAULT_PAGE_SIZE 
+    const {
+      q, category, minPrice, maxPrice, rating, color, size, inStock,
+      sort, page = 1, limit = DEFAULT_PAGE_SIZE
     } = queryParams;
 
-    const filter = { };
+    const filter = {};
 
     if (q) {
       filter.name = { $regex: q, $options: 'i' };
@@ -211,7 +211,10 @@ class ProductService {
       product.isActive = data.isActive !== undefined ? data.isActive : product.isActive;
       product.variants = parsedVariants;
       product.images = uploadedImages;
-      
+      if (data.tags) product.tags = data.tags;
+      if (data.material) product.material = data.material;
+      if (data.season) product.season = data.season;
+
       await product.save();
       return product;
     } catch (error) {
@@ -225,10 +228,10 @@ class ProductService {
   async deleteProduct(id) {
     const product = await Product.findById(id);
     if (!product) throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Sản phẩm không tồn tại');
-    
+
     product.isActive = false;
     if (product.images && product.images.length > 0) {
-      await Promise.all(product.images.map(img => cloudinaryConfig.uploader.destroy(img.public_id).catch(() => {})));
+      await Promise.all(product.images.map(img => cloudinaryConfig.uploader.destroy(img.public_id).catch(() => { })));
       product.images = [];
     }
     await product.save();
@@ -269,7 +272,7 @@ class ProductService {
       throw new ApiError(HTTP_STATUS.BAD_REQUEST, 'Action không hợp lệ');
     }
 
-    await product.save(); 
+    await product.save();
     return product;
   }
 

@@ -35,7 +35,7 @@ export default function AppRouter() {
       <Route element={<UserLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<AllProductsPage />} />
-        <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/products/:slug" element={<ProductDetailPage />} />
         {/* Protected Routes cho User */}
         <Route element={<ProtectedRoute />}>
           <Route path="/checkout" element={<CheckoutPage />} />
@@ -63,7 +63,7 @@ export default function AppRouter() {
           <Route path="/admin/categories/:id/edit" element={<CategoriesFormPage />} />
           <Route path="/admin/users" element={<UserPage />} />
           {/* <Route path="/admin/users/:id/edit" element={<div className="p-8 text-xl font-bold">Sửa Người dùng (Coming soon)</div>} /> */}
-          <Route path="/admin/vouchers" element={<VoucherPage/>} />
+          <Route path="/admin/vouchers" element={<VoucherPage />} />
         </Route>
       </Route>
 

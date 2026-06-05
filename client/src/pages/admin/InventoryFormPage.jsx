@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Loader2, X, Plus, Trash2, RotateCcw, Save, Sparkles } from 'lucide-react';
+import { Loader2, X, Plus, RotateCcw, Save } from 'lucide-react';
 import { productApi } from '../../api/productApi';
 
 export default function InventoryFormPage({ product, open, onClose, onSuccess }) {
   const [variants, setVariants] = useState([]);
   const [deltas, setDeltas] = useState([]);
   const [actives, setActives] = useState([]);
-  const [newVariants, setNewVariants] = useState([]);
   const [isFetching, setIsFetching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -17,13 +16,11 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
     const fetchProduct = async () => {
       setIsFetching(true);
       try {
-        
         const data = product;
         const v = data?.variants ?? [];
         setVariants(v);
         setDeltas(v.map(() => 0));
         setActives(v.map((x) => x.isActive));
-        setNewVariants([]);
       } catch {
         toast.error('Không thể tải dữ liệu sản phẩm');
         onClose();
@@ -42,8 +39,7 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
   const totalDelta = totalAfter - totalCurrent;
   const dirtyCount =
     deltas.filter((d) => d !== 0).length +
-    actives.filter((a, i) => a !== variants[i]?.isActive).length +
-    newVariants.length;
+    actives.filter((a, i) => a !== variants[i]?.isActive).length;
 
   // ─── Handlers: variant cũ ─────────────────────────────────────────────────
   const setDelta = (i, raw) => {
@@ -54,18 +50,9 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
   const setActive = (i, val) =>
     setActives((prev) => prev.map((a, idx) => (idx === i ? val : a)));
 
-  // ─── Handlers: variant mới ────────────────────────────────────────────────
-  const addNewRow = () =>
-    setNewVariants((prev) => [...prev, { sku: '', color: '', size: '', stock: 0 }]);
-  const updateNew = (i, field, value) =>
-    setNewVariants((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
-  const removeNew = (i) =>
-    setNewVariants((prev) => prev.filter((_, idx) => idx !== i));
-
   const handleReset = () => {
     setDeltas(variants.map(() => 0));
     setActives(variants.map((v) => v.isActive));
-    setNewVariants([]);
   };
 
   // ─── Save ─────────────────────────────────────────────────────────────────
@@ -74,35 +61,23 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
     try {
       const calls = [];
       variants.forEach((v, i) => {
-  if (deltas[i] === 0 && actives[i] === v.isActive) return;
-  calls.push(
-    productApi
-      .manageVariant(product._id, 'update', {
-        sku: v.sku,
-        color: v.color,
-        size: v.size,
-        image: v.image ?? '',
-        stock: Math.max(0, (v.stock ?? 0) + deltas[i]),
-        isActive: actives[i],
-      })
-      .catch((err) => {
-        throw new Error(`Cập nhật SKU ${v.sku} thất bại`);
-      })
-  );
-});
+        if (deltas[i] === 0 && actives[i] === v.isActive) return;
+        calls.push(
+          productApi
+            .manageVariant(product._id, 'update', {
+              sku: v.sku,
+              color: v.color,
+              size: v.size,
+              image: v.image ?? '',
+              stock: Math.max(0, (v.stock ?? 0) + deltas[i]),
+              isActive: actives[i],
+            })
+            .catch(() => {
+              throw new Error(`Cập nhật SKU ${v.sku} thất bại`);
+            })
+        );
+      });
 
-      // Variant mới — chỉ gửi dòng đã điền SKU
-     newVariants
-  .filter((r) => r.sku.trim())
-  .forEach((r) => {
-    calls.push(
-      productApi
-        .manageVariant(product._id, 'add', { ...r, isActive: true })
-        .then((res) => {
-          if (!res) throw new Error(`Thêm SKU ${r.sku} thất bại`);
-        })
-    );
-  });
       await Promise.all(calls);
       toast.success('Lưu tồn kho thành công');
       onSuccess?.();
@@ -126,7 +101,6 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
   };
   const deltaLabel = (d) => (d > 0 ? `+${d}` : d === 0 ? '—' : `${d}`);
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -179,7 +153,6 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
               </div>
 
               {/* Bảng variants hiện có */}
-             
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                   Variants hiện có
@@ -217,11 +190,10 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
                                   type="number"
                                   value={deltas[i]}
                                   onChange={(e) => setDelta(i, e.target.value)}
-                                  className={`w-14 h-7 text-center text-xs border rounded-md focus:ring-2 focus:ring-primary-500 focus:outline-none transition-colors ${
-                                    deltas[i] !== 0
+                                  className={`w-14 h-7 text-center text-xs border rounded-md focus:ring-2 focus:ring-primary-500 focus:outline-none transition-colors ${deltas[i] !== 0
                                       ? 'border-green-400 bg-green-50 text-green-700'
                                       : 'border-gray-200 bg-white text-gray-700'
-                                  }`}
+                                    }`}
                                 />
                                 <button
                                   type="button"
@@ -242,14 +214,12 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
                               <button
                                 type="button"
                                 onClick={() => setActive(i, !actives[i])}
-                                className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 ${
-                                  actives[i] ? 'bg-primary-600' : 'bg-gray-200'
-                                }`}
+                                className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 ${actives[i] ? 'bg-primary-600' : 'bg-gray-200'
+                                  }`}
                               >
                                 <span
-                                  className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
-                                    actives[i] ? 'translate-x-4' : 'translate-x-0'
-                                  }`}
+                                  className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${actives[i] ? 'translate-x-4' : 'translate-x-0'
+                                    }`}
                                 />
                               </button>
                             </td>
@@ -266,86 +236,6 @@ export default function InventoryFormPage({ product, open, onClose, onSuccess })
                     </tbody>
                   </table>
                 </div>
-              </div>
-
-              {/* Variant mới */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-                    <Sparkles size={13} />
-                    Thêm variant mới {newVariants.length > 0 && `(${newVariants.length})`}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={addNewRow}
-                    className="text-xs text-primary-600 border border-dashed border-primary-300 rounded-lg px-3 py-1 hover:bg-primary-50 flex items-center gap-1 transition-colors"
-                  >
-                    <Plus size={12} /> Thêm variant
-                  </button>
-                </div>
-
-                {newVariants.length > 0 && (
-                  <div className="border border-gray-200 rounded-xl overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                          {['SKU *', 'Màu', 'Size', 'Số lượng', ''].map((h) => (
-                            <th key={h} className="text-left text-xs font-semibold text-gray-500 px-3 py-2">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {newVariants.map((r, i) => (
-                          <tr key={i} className="border-b border-gray-100 last:border-0 bg-primary-50/30">
-                            <td className="px-2 py-1.5">
-                              <input
-                                value={r.sku}
-                                onChange={(e) => updateNew(i, 'sku', e.target.value)}
-                                placeholder="VD: APB-R-S"
-                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none"
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <input
-                                value={r.color}
-                                onChange={(e) => updateNew(i, 'color', e.target.value)}
-                                placeholder="Đỏ"
-                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none"
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <input
-                                value={r.size}
-                                onChange={(e) => updateNew(i, 'size', e.target.value)}
-                                placeholder="S"
-                                className="w-full px-2.5 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none"
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <input
-                                type="number"
-                                min={0}
-                                value={r.stock}
-                                onChange={(e) => updateNew(i, 'stock', parseInt(e.target.value) || 0)}
-                                className="w-20 px-2.5 py-1.5 text-xs text-center bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none"
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <button
-                                type="button"
-                                onClick={() => removeNew(i)}
-                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                aria-label="Xóa"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
               </div>
             </>
           )}

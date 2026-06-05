@@ -123,7 +123,7 @@ export default function Footer() {
             <ul className="space-y-4 text-[#7a6040] leading-7">
 
               <li>
-                Hotline: 1900 1000
+                Hotline: 1900 1986
               </li>
 
               <li>
@@ -131,7 +131,7 @@ export default function Footer() {
               </li>
 
               <li>
-                123 Nguyễn Huệ, Quận 1, TP.HCM
+                136 P. Triều Khúc, Triều Khúc, Thanh Liệt, Hà Nội
               </li>
 
             </ul>

@@ -28,27 +28,27 @@ export default function ProfilePage() {
     const [addresses, setAddresses] = useState([]);
     const [addressesLoading, setAddressesLoading] = useState(false);
     const [addressForm, setAddressForm] = useState({ isOpen: false, id: null, fullName: '', phone: '', city: '', ward: '', detail: '', isDefault: false });
-// Khởi tạo bảng màu trạng thái Tailwind CSS theo yêu cầu của bạn
-const ORDER_STATUS_COLORS = {
-    pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    confirmed: 'bg-blue-50 text-blue-700 border-blue-200',
-    processing: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    shipping: 'bg-purple-50 text-purple-700 border-purple-200',
-    delivered: 'bg-green-50 text-green-700 border-green-200',
-    cancelled: 'bg-red-50 text-red-700 border-red-200',
-    refunded: 'bg-gray-50 text-gray-700 border-gray-200'
-};
+    // Khởi tạo bảng màu trạng thái Tailwind CSS theo yêu cầu của bạn
+    const ORDER_STATUS_COLORS = {
+        pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+        confirmed: 'bg-blue-50 text-blue-700 border-blue-200',
+        processing: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+        shipping: 'bg-purple-50 text-purple-700 border-purple-200',
+        delivered: 'bg-green-50 text-green-700 border-green-200',
+        cancelled: 'bg-red-50 text-red-700 border-red-200',
+        refunded: 'bg-gray-50 text-gray-700 border-gray-200'
+    };
 
-// Ánh xạ text hiển thị Tiếng Việt sang trọng
-const ORDER_STATUS_LABELS = {
-    pending: 'Chờ thanh toán',
-    confirmed: 'Đã xác nhận',
-    processing: 'Đang xử lý',
-    shipping: 'Đang giao hàng',
-    delivered: 'Đã giao hàng',
-    cancelled: 'Đã hủy đơn',
-    refunded: 'Đã hoàn tiền'
-};
+    // Ánh xạ text hiển thị Tiếng Việt sang trọng
+    const ORDER_STATUS_LABELS = {
+        pending: 'Chờ thanh toán',
+        confirmed: 'Đã xác nhận',
+        processing: 'Đang xử lý',
+        shipping: 'Đang giao hàng',
+        delivered: 'Đã giao hàng',
+        cancelled: 'Đã hủy đơn',
+        refunded: 'Đã hoàn tiền'
+    };
     // Đồng bộ dữ liệu User vào Form khi thông tin tài khoản load xong
     useEffect(() => {
         if (user) {
@@ -89,7 +89,8 @@ const ORDER_STATUS_LABELS = {
         try {
             setOrdersLoading(true);
             const res = await orderApi.getUserOrders();
-            setOrders(res.data || res.data?.orders || []);
+            // Cập nhật logic nhận data từ res.data.data hoặc res.data tùy theo bọc của API
+            setOrders(res.data?.data || res.data || res.data?.orders || []);
         } catch (error) {
             console.error('Lỗi lấy lịch sử đơn hàng:', error);
         } finally {
@@ -292,82 +293,94 @@ const ORDER_STATUS_LABELS = {
                     {/* =======================================
               TAB 2: LỊCH SỬ ĐƠN HÀNG 
              ======================================= */}
-                   {activeTab === 'orders' && (
-    <div>
-        <h2 className="text-xl font-normal text-[#1f1a14] mb-6 tracking-wide border-b border-[#f5efe6] pb-3">Đơn hàng của quý khách</h2>
+                    {activeTab === 'orders' && (
+                        <div>
+                            <h2 className="text-xl font-normal text-[#1f1a14] mb-6 tracking-wide border-b border-[#f5efe6] pb-3">Đơn hàng của quý khách</h2>
 
-        {ordersLoading ? (
-            <p className="text-center py-12 text-sm text-[#7b6753] font-sans">Đang truy xuất lịch sử giao dịch...</p>
-        ) : orders.length === 0 ? (
-            <div className="text-center py-12 border border border-dashed border-[#e7dccb] rounded-xl">
-                <p className="text-sm text-[#7b6753] mb-4 font-sans">Quý khách chưa thực hiện giao dịch nào tại hệ thống.</p>
-                <a href="/" className="inline-block text-xs uppercase tracking-widest text-[#b8935f] font-semibold underline">Khám phá bộ sưu tập ngay</a>
-            </div>
-        ) : (
-            <div className="space-y-4 font-sans">
-                {orders.map(order => {
-                    // Logic kiểm tra nút hủy từ Rule của Order.js: Chỉ cho phép khi Pending hoặc Confirmed
-                    const statusKey = order.orderStatus?.toLowerCase() || 'pending';
-                    const canCancel = ['pending', 'confirmed'].includes(statusKey);
-
-                    
-
-                    // Lấy class css tương ứng hoặc fallback về pending nếu không khớp
-                    const statusBadgeClass = ORDER_STATUS_COLORS[statusKey] || ORDER_STATUS_COLORS['pending'];
-                    const statusLabel = ORDER_STATUS_LABELS[statusKey] || order.orderStatus;
-
-                    return (
-                        <div key={order._id} className="border border-[#e7dccb] rounded-xl overflow-hidden bg-[#f8f5ef]/30">
-                            {/* Header của Đơn hàng */}
-                            <div className="bg-[#f5efe6]/50 px-4 py-3 border-b border-[#e7dccb] flex flex-wrap justify-between items-center gap-2 text-xs">
-                                <div className="flex gap-4">
-                                    <span>Mã đơn: <strong className="text-[#1f1a14] font-semibold font-mono">{order.orderCode}</strong></span>
-                                    <span className="text-[#7b6753]">Ngày đặt: {new Date(order.createdAt).toLocaleDateString('vi-VN')}</span>
+                            {ordersLoading ? (
+                                <p className="text-center py-12 text-sm text-[#7b6753] font-sans">Đang truy xuất lịch sử giao dịch...</p>
+                            ) : orders.length === 0 ? (
+                                <div className="text-center py-12 border border border-dashed border-[#e7dccb] rounded-xl">
+                                    <p className="text-sm text-[#7b6753] mb-4 font-sans">Quý khách chưa thực hiện giao dịch nào tại hệ thống.</p>
+                                    <a href="/" className="inline-block text-xs uppercase tracking-widest text-[#b8935f] font-semibold underline">Khám phá bộ sưu tập ngay</a>
                                 </div>
-                                <div>
-                                    {/* Sử dụng dynamic class & hiển thị text đã chuẩn hóa */}
-                                    <span className={`px-3 py-1 rounded-full text-[11px] font-medium tracking-wide border ${statusBadgeClass}`}>
-                                        {statusLabel}
-                                    </span>
-                                </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-4 font-sans">
+                                    {orders.map(order => {
+                                        const statusKey = order.orderStatus?.toLowerCase() || 'pending';
+                                        const canCancel = ['pending', 'confirmed'].includes(statusKey);
 
-                            {/* Danh sách Item rút gọn trong Đơn hàng */}
-                            <div className="p-4 divide-y divide-[#e7dccb]/50">
-                                {order.orderItems?.map((item, idx) => (
-                                    <div key={idx} className="py-3 first:pt-0 last:pb-0 flex items-center gap-4 text-sm">
-                                        <img src={item.image} alt={item.name} className="w-12 h-16 object-cover border border-[#e7dccb] rounded bg-white flex-shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="text-[#1f1a14] font-medium truncate text-capitalize">{item.name}</h4>
-                                            <p className="text-xs text-[#7b6753] mt-0.5">Phân loại: {item.color} / {item.size} • Số lượng: {item.quantity}</p>
-                                        </div>
-                                        <span className="font-serif text-[#b8935f] font-medium">{formatPrice(item.price)}</span>
-                                    </div>
-                                ))}
-                            </div>
+                                        const statusBadgeClass = ORDER_STATUS_COLORS[statusKey] || ORDER_STATUS_COLORS['pending'];
+                                        const statusLabel = ORDER_STATUS_LABELS[statusKey] || order.orderStatus;
 
-                            {/* Footer Đơn hàng - Tổng tiền & Nút hành động */}
-                            <div className="bg-white p-4 border-t border-[#e7dccb]/50 flex justify-between items-center">
-                                <div>
-                                    <span className="text-xs text-[#7b6753] block">Tổng thanh toán</span>
-                                    <strong className="text-base font-serif text-[#1f1a14] font-medium">{formatPrice(order.totalPrice)}</strong>
+                                        return (
+                                            <div key={order._id} className="border border-[#e7dccb] rounded-xl overflow-hidden bg-[#f8f5ef]/30">
+                                                {/* Header của Đơn hàng */}
+                                                <div className="bg-[#f5efe6]/50 px-4 py-3 border-b border-[#e7dccb] flex flex-wrap justify-between items-center gap-2 text-xs">
+                                                    <div className="flex gap-4">
+                                                        <span>Mã đơn: <strong className="text-[#1f1a14] font-semibold font-mono">{order.orderCode}</strong></span>
+                                                        <span className="text-[#7b6753]">Ngày đặt: {new Date(order.createdAt).toLocaleDateString('vi-VN')}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className={`px-3 py-1 rounded-full text-[11px] font-medium tracking-wide border ${statusBadgeClass}`}>
+                                                            {statusLabel}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Danh sách Item rút gọn trong Đơn hàng */}
+                                                <div className="p-4 divide-y divide-[#e7dccb]/50">
+                                                    {order.orderItems?.map((item, idx) => (
+                                                        <div key={idx} className="py-3 first:pt-0 last:pb-0 flex items-center gap-4 text-sm">
+                                                            <img src={item.image} alt={item.name} className="w-12 h-16 object-cover border border-[#e7dccb] rounded bg-white flex-shrink-0" />
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="text-[#1f1a14] font-medium truncate text-capitalize">{item.name}</h4>
+                                                                <p className="text-xs text-[#7b6753] mt-0.5">Phân loại: {item.color} / {item.size} • Số lượng: {item.quantity}</p>
+                                                            </div>
+                                                            <span className="font-serif text-[#b8935f] font-medium">{formatPrice(item.price)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* --- ĐOẠN THÊM MỚI: THÔNG TIN ĐỊA CHỈ GIAO HÀNG --- */}
+                                                {order.shippingAddress && (
+                                                    <div className="bg-[#fdfcfb] px-4 py-3 border-t border-[#e7dccb]/40 text-xs text-[#7b6753] grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                        <div>
+                                                            <span className="font-serif uppercase tracking-wider text-[10px] text-[#a57f4c] block mb-1 font-semibold">Địa chỉ giao hàng</span>
+                                                            <p className="text-[#1f1a14] font-medium">{order.shippingAddress.fullName} — {order.shippingAddress.phone}</p>
+                                                            <p className="mt-0.5">{order.shippingAddress.detail}, {order.shippingAddress.ward}, {order.shippingAddress.city}</p>
+                                                        </div>
+                                                        <div className="md:text-right flex flex-col justify-end">
+                                                            <p>Hình thức thanh toán: <strong className="text-[#1f1a14] font-medium font-serif">{order.paymentMethod || 'COD'}</strong></p>
+                                                            {order.voucher && (
+                                                                <p className="text-green-600">Áp dụng ưu đãi: <span className="border border-dashed border-green-300 bg-green-50 px-1 rounded font-mono font-bold">{order.voucher.code}</span> (-{order.voucher.discountType === 'PERCENT' ? `${order.voucher.discountValue}%` : formatPrice(order.voucher.discountValue)})</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Footer Đơn hàng - Tổng tiền & Nút hành động */}
+                                                <div className="bg-white p-4 border-t border-[#e7dccb]/50 flex justify-between items-center">
+                                                    <div>
+                                                        <span className="text-xs text-[#7b6753] block">Tổng thanh toán</span>
+                                                        <strong className="text-base font-serif text-[#1f1a14] font-medium">{formatPrice(order.totalPrice)}</strong>
+                                                    </div>
+                                                    {canCancel && (
+                                                        <button
+                                                            onClick={() => handleOpenCancelModal(order._id)}
+                                                            className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-xs font-serif font-medium hover:bg-red-50 transition-all cursor-pointer"
+                                                        >
+                                                            Yêu cầu hủy đơn
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                                {canCancel && (
-                                    <button
-                                        onClick={() => handleOpenCancelModal(order._id)}
-                                        className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-xs font-serif font-medium hover:bg-red-50 transition-all cursor-pointer"
-                                    >
-                                        Yêu cầu hủy đơn
-                                    </button>
-                                )}
-                            </div>
+                            )}
                         </div>
-                    );
-                })}
-            </div>
-        )}
-    </div>
-)}
+                    )}
                     {/* =======================================
               TAB 3: SỔ ĐỊA CHỈ NHẬN HÀNG 
              ======================================= */}

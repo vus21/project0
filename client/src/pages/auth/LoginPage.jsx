@@ -27,6 +27,9 @@ export default function LoginPage() {
       }
     } catch (error) {
       toast.error(error.message || 'Đăng nhập thất bại');
+      if (error.message && error.message.includes('chưa được xác thực')) {
+        navigate(`/verify-email-notice?email=${encodeURIComponent(data.email)}`);
+      }
     } finally {
       setIsLoading(false);
     }

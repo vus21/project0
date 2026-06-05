@@ -13,6 +13,7 @@ import { useCart } from '../../context/CartContext';
 
 import oldmanLogo from '../../assets/oldman_logo.png';
 
+
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { summary } = useCart();
@@ -75,19 +76,6 @@ export default function Header() {
               Sản phẩm
             </Link>
 
-            <Link
-              to="/products?category=ao-thun"
-              className="text-[#d8c09b] hover:text-[#1f1a14] transition tracking-[2px] text-sm uppercase"
-            >
-              Áo thun
-            </Link>
-
-            <Link
-              to="/products?category=ao-khoac"
-              className="text-[#d8c09b] hover:text-[#1f1a14] transition tracking-[2px] text-sm uppercase"
-            >
-              Áo khoác
-            </Link>
 
           </nav>
 
@@ -95,7 +83,7 @@ export default function Header() {
           <div className="flex items-center gap-5">
 
             {/* SEARCH */}
-            <div className="hidden md:block relative">
+            {/* <div className="hidden md:block relative">
 
               <input
                 type="text"
@@ -122,7 +110,7 @@ export default function Header() {
                 size={17}
               />
 
-            </div>
+            </div> */}
 
             {/* WISHLIST */}
             <Link
@@ -228,12 +216,12 @@ export default function Header() {
                     Tài khoản của tôi
                   </Link>
 
-                  <Link
+                  {/* <Link
                     to="/profile/orders"
                     className="block px-5 py-3 text-[#5e4a36] hover:bg-[#161616] transition"
                   >
                     Đơn mua
-                  </Link>
+                  </Link> */}
 
                   <button
                     onClick={logout}
@@ -279,6 +267,7 @@ export default function Header() {
             )}
 
           </div>
+
 
         </div>
 

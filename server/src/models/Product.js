@@ -1,13 +1,17 @@
 import mongoose from 'mongoose';
 import slugify from 'slugify';
-
+import {
+  SEASONS,
+  MATERIALS,
+  PRODUCT_TAGS
+} from '../constants/index.js';
 const variantSchema = new mongoose.Schema({
   sku: { type: String, required: true, unique: true, sparse: true },
   color: { type: String, required: true, trim: true },
-  size: { 
-    type: String, 
-    required: true, 
-    enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free Size'] 
+  size: {
+    type: String,
+    required: true,
+    enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Free Size']
   },
   stock: { type: Number, default: 0, min: 0 },
   image: { url: String, public_id: String },
@@ -23,6 +27,22 @@ const productSchema = new mongoose.Schema(
     discountPrice: { type: Number, default: null, min: 0 },
     images: [{ url: String, public_id: String }],
     category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+    tags: [{
+      type: String,
+      enum: Object.values(PRODUCT_TAGS),
+      default: []
+    }],
+
+    material: {
+      type: String,
+      enum: Object.values(MATERIALS)
+    },
+
+    season: [{
+      type: String,
+      enum: Object.values(SEASONS),
+      default: SEASONS.ALL_SEASON
+    }],
     variants: [variantSchema],
     totalStock: { type: Number, default: 0 },
     rating: { type: Number, default: 0, min: 0, max: 5 },
@@ -47,7 +67,7 @@ productSchema.pre('save', async function (next) {
     }
     this.slug = baseSlug;
   }
-  
+
   // Chỉ tính stock những biến thể đang active
   if (this.isModified('variants')) {
     this.totalStock = this.variants.reduce((total, variant) => {

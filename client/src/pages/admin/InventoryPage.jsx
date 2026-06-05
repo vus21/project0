@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Save, 
-  Eye, 
-  EyeOff, 
-  ChevronDown, 
-  ChevronUp, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Search,
+  Plus,
+  Save,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle,
+  XCircle,
   Boxes,
   Layers,
   AlertTriangle,
@@ -45,7 +45,7 @@ export default function InventoryPage() {
         productApi.getAll(),
         categoryApi.getAll()
       ]);
-      
+
       const productsData = productsRes?.data || [];
       setProducts(productsData);
       setCategories(categoriesRes?.data || []);
@@ -87,12 +87,12 @@ export default function InventoryPage() {
     }));
   };
 
-  const handleStockChange = (productId, sku, value) => {
-    setEditingStock(prev => ({
-      ...prev,
-      [`${productId}-${sku}`]: value
-    }));
-  };
+  // const handleStockChange = (productId, sku, value) => {
+  //   setEditingStock(prev => ({
+  //     ...prev,
+  //     [`${productId}-${sku}`]: value
+  //   }));
+  // };
 
   const handleSaveStock = async (productId, sku) => {
     const stockValue = editingStock[`${productId}-${sku}`];
@@ -116,7 +116,7 @@ export default function InventoryPage() {
     let filtered = [...products];
 
     if (searchTerm) {
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -234,11 +234,10 @@ export default function InventoryPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-1.5 rounded-md font-medium text-xs whitespace-nowrap transition-all ${
-                  activeTab === tab.key
+                className={`px-4 py-1.5 rounded-md font-medium text-xs whitespace-nowrap transition-all ${activeTab === tab.key
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-500 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -288,7 +287,7 @@ export default function InventoryPage() {
                         {/* Information */}
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            {product.images?.[0] ? (
+                            {/* {product.images?.[0] ? (
                               <img
                                 src={product.images[0]}
                                 alt={product.name}
@@ -298,7 +297,7 @@ export default function InventoryPage() {
                               <div className="w-14 h-14 bg-gray-100 rounded-md mr-4 border border-gray-100 flex items-center justify-center text-gray-400 text-xs">
                                 No image
                               </div>
-                            )}
+                            )} */}
                             <div>
                               <div className="font-semibold text-gray-900">{product.name}</div>
                               <div className="text-xs text-gray-400 mt-1">
@@ -338,9 +337,8 @@ export default function InventoryPage() {
 
                         {/* Active Visibility */}
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                            product.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
-                          }`}>
+                          <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium ${product.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
+                            }`}>
                             {product.isActive ? (
                               <>
                                 <CheckCircle size={12} className="mr-1" /> Hiển thị
@@ -367,18 +365,17 @@ export default function InventoryPage() {
                           </button>
                           <button
                             onClick={() => toggleExpand(product._id)}
-                            className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${
-                              expandedProducts[product._id]
+                            className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${expandedProducts[product._id]
                                 ? 'bg-gray-200 text-gray-800'
                                 : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                            }`}
+                              }`}
                           >
                             Chi tiết
                             {expandedProducts[product._id] ? <ChevronUp size={14} className="ml-1" /> : <ChevronDown size={14} className="ml-1" />}
                           </button>
                         </td>
                       </tr>
-                      
+
                       {/* Sub-table for Variants */}
                       {expandedProducts[product._id] && (
                         <tr className="bg-gray-50/50">
@@ -404,7 +401,8 @@ export default function InventoryPage() {
                                         <input
                                           type="number"
                                           value={editingStock[`${product._id}-${variant.sku}`] ?? variant.stock}
-                                          onChange={(e) => handleStockChange(product._id, variant.sku, e.target.value)}
+                                          // onChange={(e) => handleStockChange(product._id, variant.sku, e.target.value)}
+                                          readOnly
                                           className="w-20 px-2 py-1 bg-white border border-gray-200 rounded text-right text-sm text-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition"
                                           min="0"
                                         />

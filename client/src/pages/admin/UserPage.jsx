@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  adminApi 
+import {
+  adminApi
 } from '../../api/adminApi'; // Điều chỉnh đường dẫn này cho đúng cấu trúc thư mục của bạn
 import {
   Trash2,
@@ -59,7 +59,7 @@ export default function UsersPage() {
       if (!current.isActive) acc.locked++;
       return acc;
     }, { total: 0, admin: 0, user: 0, locked: 0 });
-    
+
     setStats(statsObj);
   };
 
@@ -82,7 +82,7 @@ export default function UsersPage() {
     if (!window.confirm('Hành động này không thể hoàn tác! Bạn có chắc chắn muốn xóa người dùng này?')) return;
 
     try {
-      await adminApi.delete(id);
+      await adminApi.deleteUser(id);
       toast.success('Xóa tài khoản thành công');
       fetchUsers();
     } catch (error) {
@@ -92,15 +92,15 @@ export default function UsersPage() {
 
   // Xử lý bộ lọc kết hợp Tìm kiếm + Role + Trạng thái
   const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
+    const matchesSearch =
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    
-    const matchesStatus = 
-      statusFilter === 'all' || 
-      (statusFilter === 'active' && user.isActive) || 
+
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && user.isActive) ||
       (statusFilter === 'inactive' && !user.isActive);
 
     return matchesSearch && matchesRole && matchesStatus;
@@ -229,8 +229,8 @@ export default function UsersPage() {
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr 
-                    key={user._id} 
+                  <tr
+                    key={user._id}
                     className="hover:bg-gray-50/50 transition-colors"
                   >
                     {/* Thông tin cá nhân */}
@@ -283,23 +283,22 @@ export default function UsersPage() {
                       {/* Nút khóa/mở khóa nhanh */}
                       <button
                         onClick={() => handleToggleStatus(user._id, user.isActive)}
-                        className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${
-                          user.isActive
-                            ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200'
-                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
-                        }`}
+                        className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded-lg text-xs font-medium border transition ${user.isActive
+                          ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
+                          }`}
                       >
                         {user.isActive ? 'Khóa TK' : 'Mở khóa'}
                       </button>
 
                       {/* Nút xóa tài khoản hẳn khỏi hệ thống */}
-                      <button
+                      {/* <button
                         onClick={() => handleDelete(user._id)}
                         className="inline-flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg border border-transparent hover:border-red-100 transition-colors"
                         title="Xóa vĩnh viễn"
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </button> */}
                     </td>
                   </tr>
                 ))

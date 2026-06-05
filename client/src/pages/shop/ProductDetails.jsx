@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useLocation, Link, useNavigate, useParams } from 'react-router-dom'; // Thêm useParams
 import { cartApi } from '../../api/cartApi';
 import { Minus, Plus, ShoppingBag, CreditCard, ArrowLeft, Heart } from 'lucide-react';
 import { wishlistApi } from '../../api/wishlistApi';
+import { productApi } from '../../api/productApi';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
@@ -12,11 +13,11 @@ function formatPrice(price) {
 export default function ProductDetailPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { slug } = useParams(); // Lấy slug từ URL dựa trên route khai báo ở thẻ Link trong ProductCard
 
-  // Lấy dữ liệu product trực tiếp từ state truyền qua
-  const product = state?.product;
+  const [product, setProduct] = useState(state?.product || null);
+  const [isLoading, setIsLoading] = useState(!state?.product); // Cờ loading nếu phải gọi API
 
-  // Các States quản lý tương tác giao diện
   const [isWishlist, setIsWishlist] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [selectedColor, setSelectedColor] = useState('');
@@ -24,7 +25,37 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedSku, setSelectedSku] = useState('');
 
-  // Khởi tạo thuộc tính (Màu & Size) mặc định dựa theo cấu trúc variants
+  // Thay đổi quan trọng: Gọi API lấy chi tiết sản phẩm nếu không có dữ liệu truyền từ Card
+  useEffect(() => {
+    if (product) {
+      setIsLoading(false);
+      console.log("data product", product);
+      return;
+    }
+    const fetchProduct = async () => {
+      try {
+
+        const response = await productApi.getBySlug(slug);
+        // Chú ý bóc tách dữ liệu theo đúng chuẩn trả về của Backend dự án
+        const data = response?.data || response?.data?.product || response;
+
+        setProduct(data);
+        console.log("data product", product);
+      } catch (error) {
+        console.error("Lỗi khi tải thông tin sản phẩm:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (slug) {
+      fetchProduct();
+    } else {
+      setIsLoading(false);
+    }
+  }, [slug, product]);
+
+  // Khởi tạo thuộc tính (Màu & Size) mặc định dựa theo cấu trúc variants (Giữ nguyên)
   useEffect(() => {
     if (product?.variants && product.variants.length > 0) {
       const defaultVariant = product.variants.find(v => v.stock > 0 && v.isActive) || product.variants[0];
@@ -36,7 +67,7 @@ export default function ProductDetailPage() {
     }
   }, [product]);
 
-  // Cập nhật lại SKU khi người dùng thay đổi tổ hợp Màu sắc / Kích cỡ
+  // Cập nhật lại SKU khi người dùng thay đổi tổ hợp Màu sắc / Kích cỡ (Giữ nguyên)
   useEffect(() => {
     if (product?.variants && selectedColor && selectedSize) {
       const matchVariant = product.variants.find(v => v.color === selectedColor && v.size === selectedSize);
@@ -45,13 +76,14 @@ export default function ProductDetailPage() {
       }
     }
   }, [selectedColor, selectedSize, product]);
+
+  // Kiểm tra trạng thái wishlist (Giữ nguyên)
   useEffect(() => {
     const checkWishlistStatus = async () => {
       if (!product?._id) return;
       try {
         const res = await wishlistApi.getWishList();
         const wishlist = res.data?.wishlist || [];
-        // Kiểm tra xem ID của sản phẩm này có trong danh sách yêu thích không
         const isLiked = wishlist.some(item => item._id === product._id);
         setIsWishlist(isLiked);
       } catch (error) {
@@ -61,8 +93,19 @@ export default function ProductDetailPage() {
 
     checkWishlistStatus();
   }, [product]);
-  // Fallback phòng trường hợp user reload trang làm mất state của React Router
+
+  // Thêm màn hình Loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#f8f5ef] flex items-center justify-center font-serif text-[#b8935f]">
+        Đang tải thông tin sản phẩm...
+      </div>
+    );
+  }
+
+  // Fallback phòng trường hợp user reload trang làm mất state của React Router (Giữ nguyên)
   if (!product) {
+    console.log("data product", slug);
     return (
       <div className="min-h-screen bg-[#f8f5ef] flex flex-col items-center justify-center font-serif px-4 text-center">
         <h2 className="text-[#1f1a14] text-xl mb-4 tracking-wide font-normal">
@@ -77,6 +120,9 @@ export default function ProductDetailPage() {
       </div>
     );
   }
+
+  // Trích xuất danh sách Màu sắc và Kích cỡ duy nhất từ product.variants
+  // ... (Giữ nguyên từ đây trở xuống) ...
 
   // Trích xuất danh sách Màu sắc và Kích cỡ duy nhất từ product.variants
   const availableColors = product.variants ? [...new Set(product.variants.map(v => v.color).filter(Boolean))] : [];
@@ -110,7 +156,7 @@ export default function ProductDetailPage() {
     try {
       // Gọi API toggle của bạn
       await wishlistApi.toggleWishlist(product._id);
-      
+
       // Cập nhật trạng thái giao diện và thông báo
       setIsWishlist(prev => {
         const nextState = !prev;
@@ -173,7 +219,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f5ef] font-serif text-[#5e4a36] pb-20 selection:bg-[#b8935f]/20">
-      
+
       {/* Thanh Breadcrumb Điều hướng */}
       <div className="pt-6">
         <div className="max-w-6xl mx-auto px-6 sm:px-8 text-[11px] tracking-widest uppercase text-[#7b6753] flex items-center gap-2">
@@ -185,7 +231,7 @@ export default function ProductDetailPage() {
 
       {/* Container Nội dung Chính */}
       <div className="max-w-6xl mx-auto mt-10 px-6 sm:px-8 grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-14">
-        
+
         {/* Khối bên trái: Thư viện hình ảnh sản phẩm (Phân bổ 5 cột trên màn hình lớn) */}
         <div className="md:col-span-6 lg:col-span-5 w-full max-w-lg mx-auto md:max-w-none">
           {/* Ảnh lớn chính */}
@@ -204,11 +250,10 @@ export default function ProductDetailPage() {
                 <button
                   key={img._id || idx}
                   onClick={() => setSelectedImageIdx(idx)}
-                  className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-white p-0.5 transition-all ${
-                    idx === selectedImageIdx 
-                      ? 'border-2 border-[#b8935f] shadow-sm' 
-                      : 'border border-[#e7dccb] hover:border-[#b8935f]'
-                  }`}
+                  className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-white p-0.5 transition-all ${idx === selectedImageIdx
+                    ? 'border-2 border-[#b8935f] shadow-sm'
+                    : 'border border-[#e7dccb] hover:border-[#b8935f]'
+                    }`}
                 >
                   <img src={img.url} alt="thumbnail" className="w-full h-full object-cover rounded-md" />
                 </button>
@@ -219,32 +264,31 @@ export default function ProductDetailPage() {
 
         {/* Khối bên phải: Chi tiết thông tin cấu hình sản phẩm (Phân bổ 6-7 cột) */}
         <div className="md:col-span-6 lg:col-span-7 flex flex-col">
-          
+
           {/* Tên sản phẩm */}
           <div className="flex items-start justify-between gap-4 mb-3">
             <h1 className="text-3xl md:text-4xl font-normal text-[#1f1a14] tracking-wide capitalize leading-tight flex-1">
               {product.name}
             </h1>
 
-            <button 
+            <button
               onClick={handleToggleWishlist}
               className="mt-1 flex-shrink-0 w-10 h-10 border border-[#e7dccb] rounded-full flex items-center justify-center bg-white cursor-pointer transition-all hover:border-[#b8935f] hover:shadow-sm"
               title={isWishlist ? "Xóa khỏi danh sách yêu thích" : "Thêm vào danh sách yêu thích"}
             >
-              <Heart 
-                size={20} 
-                className={`transition-colors ${
-                  isWishlist 
-                    ? 'fill-[#b8935f] text-[#b8935f]' 
-                    : 'text-[#7b6753]'
-                }`} 
+              <Heart
+                size={20}
+                className={`transition-colors ${isWishlist
+                  ? 'fill-[#b8935f] text-[#b8935f]'
+                  : 'text-[#7b6753]'
+                  }`}
               />
             </button>
           </div>
 
           {/* Trạng thái kho hàng */}
           <div className="text-[11px] tracking-widest uppercase text-[#7b6753] mb-5">
-            Trạng thái: 
+            Trạng thái:
             <span className={`ml-1.5 font-bold ${isOutOfStock ? 'text-red-500' : 'text-[#b8935f]'}`}>
               {isOutOfStock ? 'Hết hàng' : 'Còn hàng'}
             </span>
@@ -277,11 +321,10 @@ export default function ProductDetailPage() {
                   <button
                     key={color}
                     onClick={() => { setSelectedColor(color); setQuantity(1); }}
-                    className={`h-10 px-5 border text-xs tracking-wider rounded-lg transition-all font-sans ${
-                      selectedColor === color
-                        ? 'border-[#b8935f] bg-[#f5efe6] text-[#1f1a14] font-semibold shadow-sm'
-                        : 'border-[#e7dccb] bg-white text-[#5e4a36] hover:border-[#b8935f]'
-                    }`}
+                    className={`h-10 px-5 border text-xs tracking-wider rounded-lg transition-all font-sans ${selectedColor === color
+                      ? 'border-[#b8935f] bg-[#f5efe6] text-[#1f1a14] font-semibold shadow-sm'
+                      : 'border-[#e7dccb] bg-white text-[#5e4a36] hover:border-[#b8935f]'
+                      }`}
                   >
                     {color}
                   </button>
@@ -306,13 +349,12 @@ export default function ProductDetailPage() {
                       key={size}
                       disabled={disabled}
                       onClick={() => { setSelectedSize(size); setQuantity(1); }}
-                      className={`h-10 px-5 border text-xs tracking-wider rounded-lg transition-all font-sans ${
-                        selectedSize === size
-                          ? 'border-[#b8935f] bg-[#f5efe6] text-[#1f1a14] font-semibold shadow-sm'
-                          : disabled
-                            ? 'border-dashed border-[#e7dccb] text-[#7b6753] opacity-40 cursor-not-allowed'
-                            : 'border-[#e7dccb] bg-white text-[#5e4a36] hover:border-[#b8935f]'
-                      }`}
+                      className={`h-10 px-5 border text-xs tracking-wider rounded-lg transition-all font-sans ${selectedSize === size
+                        ? 'border-[#b8935f] bg-[#f5efe6] text-[#1f1a14] font-semibold shadow-sm'
+                        : disabled
+                          ? 'border-dashed border-[#e7dccb] text-[#7b6753] opacity-40 cursor-not-allowed'
+                          : 'border-[#e7dccb] bg-white text-[#5e4a36] hover:border-[#b8935f]'
+                        }`}
                     >
                       {size}
                     </button>

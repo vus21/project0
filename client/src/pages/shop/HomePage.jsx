@@ -9,7 +9,7 @@ import {
 
 import { productApi } from '../../api/productApi';
 import ProductCard from '../../components/product/ProductCard';
-
+import ChatbotWidget from '../../pages/chatbot/chatbotWidget';
 import oldmanLogo from '../../assets/oldman_logo.png';
 
 export default function HomePage() {
@@ -75,7 +75,7 @@ export default function HomePage() {
 
         {/* Background */}
         <div className="absolute inset-0">
-
+          <ChatbotWidget />
           <img
             className="w-full h-full object-cover"
             src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=2000&auto=format&fit=crop"
@@ -156,7 +156,7 @@ export default function HomePage() {
                 KHÁM PHÁ NGAY
               </Link>
 
-              <Link
+              {/* <Link
                 to="/collections"
                 className="
                   px-8 py-4 rounded-2xl
@@ -169,7 +169,7 @@ export default function HomePage() {
                 "
               >
                 BỘ SƯU TẬP
-              </Link>
+              </Link> */}
 
             </div>
 
@@ -233,7 +233,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {isLoading ? (    renderSkeleton()   ) : newProducts.length === 0 ? (
+          {isLoading ? (renderSkeleton()) : newProducts.length === 0 ? (
             <div
               className="
                 text-center py-20 rounded-3xl
@@ -262,9 +262,9 @@ export default function HomePage() {
       </section>
 
       {/* COLLECTION BANNER */}
-      <section className="relative py-28 overflow-hidden">
+      {/* <section className="relative py-28 overflow-hidden">
 
-        {/* Background */}
+       
         <div className="absolute inset-0">
 
           <img
@@ -315,7 +315,7 @@ export default function HomePage() {
 
         </div>
 
-      </section>
+      </section> */}
 
       {/* BEST SELLERS */}
       <section className="relative py-24 bg-[#f5efe6]">
