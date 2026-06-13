@@ -41,22 +41,19 @@ class CategoryService {
     const { includeInactive, parentOnly } = query;
   
     const filter = {};
-  
     // if (!includeInactive) {
     //   filter.isActive = true;
     // }
-  
     if (parentOnly === 'true') {
       filter.parent_id = null;
     }
-  
     const categories = await Category.find(filter)
       .populate('children')
       .populate('parent_id', 'name slug')
       .lean();
-  
     return categories;
   }
+
   async getCategoryBySlug(slug) {
     const category = await Category.findOne({ slug, isActive: true })
       .populate('parent_id')

@@ -7,7 +7,18 @@ import {
 } from '../constants/index.js';
 const variantSchema = new mongoose.Schema({
   sku: { type: String, required: true, unique: true, sparse: true },
-  color: { type: String, required: true, trim: true },
+  color: {
+    type: String,
+    required: true,
+    trim: true,
+    set: (value) => {
+      if (!value) return value;
+  
+      const normalized = value.trim().toLowerCase();
+  
+      return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    }
+  },
   size: {
     type: String,
     required: true,

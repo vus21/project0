@@ -11,6 +11,7 @@ router.use(protect);
 router.use(restrictTo(USER_ROLES.ADMIN));
 
 // Dashboard Analytics
+router.get('/seed-data', adminController.seedData);
 router.get('/dashboard', adminController.getDashboard);
 router.get('/revenue-chart', adminController.getRevenueChart);
 router.get('/top-products', adminController.getTopProducts);

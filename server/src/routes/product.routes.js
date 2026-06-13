@@ -20,7 +20,6 @@ router.get('/:productId/reviews', reviewController.getProductReviews);
 router.post('/:productId/reviews', protect, reviewController.createReview);
 
 // Admin routes
-// Tạm thời bỏ chặn để test bằng Postman
 router.use(protect);
 router.use(restrictTo(USER_ROLES.ADMIN));
 

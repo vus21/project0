@@ -31,7 +31,7 @@ export default function ProductsPage() {
       setIsLoading(true);
 
       const res = await productApi.getAllAdmin({
-        limit: 100
+        // limit: 100
       });
 
       // Đảm bảo luôn là array

@@ -1,7 +1,11 @@
 import { asyncHandler } from '../middlewares/asyncHandler.js';
 import { adminService } from '../services/admin.service.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
-
+import { seedService } from '../services/seed.service.js';
+export const seedData = asyncHandler(async (req, res) => {
+  await adminService.seedData();
+  ApiResponse.success(res, null, 'Dữ liệu mẫu đã được tạo thành công');
+});
 export const getDashboard = asyncHandler(async (req, res) => {
   const stats = await adminService.getDashboardStats();
   ApiResponse.success(res, stats, 'Lấy dữ liệu tổng quan thành công');

@@ -8,6 +8,7 @@ const router = Router();
 
 // Public routes
 router.get('/', categoryController.getAllCategories);
+
 router.get('/:slug', categoryController.getCategoryBySlug);
 
 // Admin routes

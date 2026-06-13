@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
@@ -25,51 +24,27 @@ export default function ProductCard({ product }) {
     <Link
       to={`/products/${product.slug}`}
       state={{ product }}
-      style={{ textDecoration: 'none' }}
+      className="no-underline group"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div style={{
-        background: '#ffffff',
-        borderRadius: 16,
-        border: `1px solid ${hovered ? '#b8935f' : '#e7dccb'}`,
-        overflow: 'hidden',
-        transition: 'all 0.35s cubic-bezier(.4,0,.2,1)',
-        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-        boxShadow: hovered
-          ? '0 12px 40px rgba(184,147,95,0.13), 0 2px 8px rgba(0,0,0,0.06)'
-          : '0 1px 4px rgba(0,0,0,0.04)',
-        cursor: 'pointer',
-      }}>
+      <div className="bg-white rounded-2xl border border-[#e7dccb] group-hover:border-[#b8935f] overflow-hidden transition-all duration-350 ease-[cubic-bezier(0.4,0,0.2,1)] translate-y-0 group-hover:-translate-y-1 shadow-[0_1px_4px_rgba(0,0,0,0.04)] group-hover:shadow-[0_12px_40px_rgba(184,147,95,0.13),0_2px_8px_rgba(0,0,0,0.06)] cursor-pointer">
         {/* Image */}
-        <div style={{ position: 'relative', overflow: 'hidden', background: '#f8f5ef', height: 300 }}>
+        <div className="relative overflow-hidden bg-[#f8f5ef] h-[300px]">
           {pct && (
-            <div style={{
-              position: 'absolute', top: 14, left: 14, zIndex: 2,
-              background: '#1f1a14', color: '#f8f5ef',
-              fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
-              padding: '4px 9px', borderRadius: 6,
-              fontFamily: '"Cormorant Garamond", serif',
-            }}>
+            <div className="absolute top-3.5 left-3.5 z-10 bg-[#1f1a14] text-[#f8f5ef] text-[11px] font-semibold tracking-[0.08em] py-1 px-[9px] rounded-[6px] font-['Cormorant_Garamond']">
               -{pct}%
             </div>
           )}
           {images.length > 1 && (
-            <div style={{
-              position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
-              display: 'flex', gap: 5, zIndex: 2,
-            }}>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-[5px] z-10">
               {images.slice(0, Math.min(images.length, 4)).map((_, i) => (
                 <button
                   key={i}
                   onClick={e => { e.preventDefault(); setImgIdx(i); }}
-                  style={{
-                    width: i === imgIdx ? 18 : 6,
-                    height: 6, borderRadius: 3, border: 'none', cursor: 'pointer',
-                    background: i === imgIdx ? '#b8935f' : 'rgba(255,255,255,0.7)',
-                    transition: 'all 0.25s',
-                    padding: 0,
-                  }}
+                  className={`h-1.5 rounded-full border-none cursor-pointer transition-all duration-250 p-0 ${
+                    i === imgIdx ? 'w-[18px] bg-[#b8935f]' : 'w-1.5 bg-white/70'
+                  }`}
                 />
               ))}
             </div>
@@ -77,56 +52,43 @@ export default function ProductCard({ product }) {
           <img
             src={hovered && hoverImg ? hoverImg : mainImg}
             alt={product.name}
-            style={{
-              width: '100%', height: '100%', objectFit: 'cover',
-              transition: 'transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.3s',
-              transform: hovered ? 'scale(1.04)' : 'scale(1)',
-            }}
-            onError={e => { e.target.style.opacity = 0.3; }}
+            className="w-full h-full object-cover transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] scale-100 group-hover:scale-[1.04]"
+            onError={e => { e.target.classList.add('opacity-30'); }}
           />
         </div>
 
         {/* Info */}
-        <div style={{ padding: '16px 18px 20px' }}>
-          <p style={{
-            fontSize: 10, fontWeight: 600, letterSpacing: '0.14em',
-            color: '#b8935f', textTransform: 'uppercase', margin: '0 0 6px',
-            fontFamily: '"Cormorant Garamond", serif',
-          }}>
+        <div className="pt-4 px-[18px] pb-5">
+          <p className="text-[10px] font-semibold tracking-[0.14em] text-[#b8935f] uppercase mb-1.5 font-['Cormorant_Garamond']">
             {product.category_id?.name || 'OLDMAN'}
           </p>
-          <p style={{
-            fontSize: 14, fontWeight: 500, color: '#1f1a14',
-            margin: '0 0 12px', lineHeight: 1.45,
-            fontFamily: '"Libre Baskerville", serif',
-            letterSpacing: '0.01em',
-            display: '-webkit-box', WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          }}>
+          <p className="text-sm font-medium text-[#1f1a14] mb-3 leading-[1.45] font-['Libre_Baskerville'] tracking-[0.01em] line-clamp-2">
             {product.name}
           </p>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span style={{
-              fontSize: 16, fontWeight: 600, color: '#b8935f',
-              fontFamily: '"Cormorant Garamond", serif', letterSpacing: '0.02em',
-            }}>
-              {formatPrice(price)}
-            </span>
-            {originalPrice && (
-              <span style={{
-                fontSize: 12, color: '#b0a090',
-                textDecoration: 'line-through',
-                fontFamily: '"Cormorant Garamond", serif',
-              }}>
-                {formatPrice(originalPrice)}
+          
+          {/* Price & Sold Container */}
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-base font-semibold text-[#b8935f] font-['Cormorant_Garamond'] tracking-[0.02em]">
+                {formatPrice(price)}
+              </span>
+              {originalPrice && (
+                <span className="text-xs text-[#b0a090] line-through font-['Cormorant_Garamond']">
+                  {formatPrice(originalPrice)}
+                </span>
+              )}
+            </div>
+            
+            {/* Thông tin Đã bán */}
+            {typeof product.sold === 'number' && (
+              <span className="text-base font-semibold text-[#b8935f] font-['Cormorant_Garamond'] tracking-[0.02em]">
+                Đã bán {product.sold}
               </span>
             )}
           </div>
+
           {product.totalStock === 0 && (
-            <p style={{
-              fontSize: 10, color: '#c0a080', marginTop: 6, letterSpacing: '0.1em',
-              textTransform: 'uppercase', fontFamily: '"Cormorant Garamond", serif',
-            }}>
+            <p className="text-[10px] text-[#c0a080] mt-1.5 tracking-[0.1em] uppercase font-['Cormorant_Garamond']">
               Hết hàng
             </p>
           )}

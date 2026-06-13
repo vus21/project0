@@ -8,7 +8,7 @@ class ProductService {
   async getProducts(queryParams) {
     const {
       q, category, minPrice, maxPrice, rating, color, size, inStock,
-      sort, page = 1, limit = DEFAULT_PAGE_SIZE
+      sort, page = 1, limit 
     } = queryParams;
 
     // const filter = {  };
@@ -43,6 +43,11 @@ class ProductService {
     else if (sort === 'price_desc') sortObj = { basePrice: -1 };
     else if (sort === 'best_seller') sortObj = { sold: -1 };
     else if (sort === 'top_rated') sortObj = { rating: -1 };
+    else if (sort === 'updatedAt_desc') sortObj = { createdAt: -1 };
+    else if (sort === 'updatedAt_asc') sortObj = { createdAt: 1 };
+    else if (sort === 'sold_desc') sortObj = { sold: -1 };
+
+    
 
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -71,11 +76,10 @@ class ProductService {
   async getAllProducts(queryParams) {
     const {
       q, category, minPrice, maxPrice, rating, color, size, inStock,
-      sort, page = 1, limit = DEFAULT_PAGE_SIZE
+      sort, page = 1, limit 
     } = queryParams;
 
     const filter = {};
-
     if (q) {
       filter.name = { $regex: q, $options: 'i' };
     }
@@ -225,16 +229,38 @@ class ProductService {
     }
   }
 
+  // async deleteProduct(id) {
+  //   const product = await Product.findById(id);
+  //   if (!product) throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Sản phẩm không tồn tại');
+
+  //   product.isActive = false;
+  //   if (product.images && product.images.length > 0) {
+  //     await Promise.all(product.images.map(img => cloudinaryConfig.uploader.destroy(img.public_id).catch(() => { })));
+  //     product.images = [];
+  //   }
+  //   await product.save();
+  //   return true;
+  // }
   async deleteProduct(id) {
     const product = await Product.findById(id);
-    if (!product) throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Sản phẩm không tồn tại');
-
-    product.isActive = false;
-    if (product.images && product.images.length > 0) {
-      await Promise.all(product.images.map(img => cloudinaryConfig.uploader.destroy(img.public_id).catch(() => { })));
-      product.images = [];
+  
+    if (!product) {
+      throw new ApiError(
+        HTTP_STATUS.NOT_FOUND,
+        'Sản phẩm không tồn tại'
+      );
     }
-    await product.save();
+  
+    await Promise.all(
+      (product.images || []).map(img =>
+        cloudinaryConfig.uploader
+          .destroy(img.public_id)
+          .catch(() => {})
+      )
+    );
+  
+    await product.deleteOne();
+  
     return true;
   }
 

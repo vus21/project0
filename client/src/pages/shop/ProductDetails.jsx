@@ -292,7 +292,13 @@ export default function ProductDetailPage() {
             <span className={`ml-1.5 font-bold ${isOutOfStock ? 'text-red-500' : 'text-[#b8935f]'}`}>
               {isOutOfStock ? 'Hết hàng' : 'Còn hàng'}
             </span>
+            
           </div>
+          {typeof product.sold === 'number' && (
+              <span className="text-base font-semibold text-[#b8935f] font-['Cormorant_Garamond'] tracking-[0.02em]">
+                Đã bán {product.sold}
+              </span>
+            )}
 
           <hr className="border-t border-[#e7dccb] mb-6" />
 
@@ -314,7 +320,7 @@ export default function ProductDetailPage() {
           {availableColors.length > 0 && (
             <div className="mb-6">
               <span className="text-[11px] tracking-widest uppercase text-[#7b6753] block mb-2.5">
-                Màu sắc: <strong className="text-[#1f1a14] ml-1 font-sans text-xs tracking-normal">{selectedColor}</strong>
+                Màu sắc: 
               </span>
               <div className="flex flex-wrap gap-2.5">
                 {availableColors.map(color => (

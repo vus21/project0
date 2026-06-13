@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { productApi } from '../../api/productApi';
+import { categoryApi } from '../../api/categoryApi';
 import ProductCard from '../../components/product/ProductCard';
 
 const SORT_OPTIONS = [
@@ -9,15 +10,6 @@ const SORT_OPTIONS = [
   { value: 'price_asc', label: 'Giá tăng dần' },
   { value: 'price_desc', label: 'Giá giảm dần' },
   { value: 'rating_desc', label: 'Đánh giá cao nhất' },
-];
-
-const CATEGORIES = [
-  { label: 'Tất cả', value: '' },
-  { label: 'Sản phẩm mới', value: 'san-pham-moi' },
-  { label: 'Danh mục sale', value: 'danh-muc-sale' },
-  { label: 'Áo nam', value: 'ao-nam' },
-  { label: 'Quần nam', value: 'quan-nam' },
-  { label: 'Phụ kiện', value: 'phu-kien' },
 ];
 
 const PRICE_RANGES = [
@@ -30,18 +22,12 @@ const PRICE_RANGES = [
 
 function ProductCardSkeleton() {
   return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: 16,
-      border: '1px solid #e7dccb',
-      overflow: 'hidden',
-      animation: 'pulse 1.5s ease-in-out infinite',
-    }}>
-      <div style={{ height: 320, background: '#f5efe6' }} />
-      <div style={{ padding: '16px 20px 20px' }}>
-        <div style={{ height: 12, background: '#f5efe6', borderRadius: 6, width: '40%', marginBottom: 10 }} />
-        <div style={{ height: 16, background: '#f5efe6', borderRadius: 6, width: '80%', marginBottom: 14 }} />
-        <div style={{ height: 20, background: '#f5efe6', borderRadius: 6, width: '50%' }} />
+    <div className="bg-white rounded-2xl border border-[#e7dccb] overflow-hidden animate-pulse">
+      <div className="h-80 bg-[#f5efe6]" />
+      <div className="p-4 pb-5 px-5">
+        <div className="h-3 bg-[#f5efe6] rounded-md w-2/5 mb-2.5" />
+        <div className="h-4 bg-[#f5efe6] rounded-md w-4/5 mb-3.5" />
+        <div className="h-5 bg-[#f5efe6] rounded-md w-1/2" />
       </div>
     </div>
   );
@@ -55,7 +41,11 @@ export default function ProductListPage() {
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const limit = 12;
+  const limit = 16;
+
+  // Categories fetched from API (only root categories, each with its children for the hover menu)
+  const [categories, setCategories] = useState([]);
+  const [openCatSlug, setOpenCatSlug] = useState(null); // slug of root category whose children dropdown is open
 
   const sort = searchParams.get('sort') || 'updatedAt_desc';
   const category = searchParams.get('category') || '';
@@ -64,9 +54,32 @@ export default function ProductListPage() {
 
   const [searchInput, setSearchInput] = useState(search);
   const [sortOpen, setSortOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
 
   const selectedPriceRange = PRICE_RANGES[priceRangeIdx] || PRICE_RANGES[0];
+
+  // Keep the search input in sync if the URL changes from elsewhere (e.g. "Xoá bộ lọc")
+  useEffect(() => { setSearchInput(search); }, [search]);
+
+  // Fetch root categories (parent_id === null) with their children for the dropdown menu
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await categoryApi.getAll();
+        const all = res?.data || [];
+        const roots = all
+          .filter(c => c.parent_id === null && c.isActive !== false)
+          .map(c => ({
+            label: c.name,
+            value: c.slug,
+            children: (c.children || []).filter(ch => ch.isActive !== false),
+          }));
+        setCategories(roots);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
@@ -76,7 +89,7 @@ export default function ProductListPage() {
         limit,
         page,
         ...(category && { category }),
-        ...(search && { search }),
+        ...(search && { q:search }),
         ...(selectedPriceRange.min > 0 && { minPrice: selectedPriceRange.min }),
         ...(selectedPriceRange.max !== Infinity && { maxPrice: selectedPriceRange.max }),
       };
@@ -100,6 +113,12 @@ export default function ProductListPage() {
     setSearchParams(next);
   };
 
+  // Select a category (root or child slug). Clicking the same category again clears the filter.
+  const handleSelectCategory = (slug) => {
+    updateParam('category', category === slug ? '' : slug);
+    setOpenCatSlug(null);
+  };
+
   const handleSearch = e => {
     e.preventDefault();
     updateParam('search', searchInput.trim());
@@ -109,91 +128,69 @@ export default function ProductListPage() {
 
   const selectedSortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || 'Sắp xếp';
 
+  // Display label for the currently selected category (root or child)
+  const selectedCategoryLabel = (() => {
+    if (!category) return 'Bộ sưu tập';
+    for (const root of categories) {
+      if (root.value === category) return root.label;
+      const child = root.children.find(ch => ch.slug === category);
+      if (child) return child.name;
+    }
+    return 'Sản phẩm';
+  })();
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#f8f5ef',
-      fontFamily: '"Cormorant Garamond", "Libre Baskerville", Georgia, serif',
-    }}>
+    <div className="min-h-screen bg-[#f8f5ef] font-serif">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
-        * { box-sizing: border-box; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
         .product-grid { animation: fadeIn 0.45s ease forwards; }
-        .filter-btn:hover { background: #f5efe6 !important; }
-        .page-btn:hover { background: #b8935f !important; color: #fff !important; }
         select { appearance: none; -webkit-appearance: none; }
-        input[type=text], input[type=search] { outline: none; }
-        input[type=text]:focus, input[type=search]:focus { border-color: #b8935f !important; }
-        .cat-item { transition: all 0.2s; cursor: pointer; }
-        .cat-item:hover { color: #b8935f !important; }
-        .sort-option:hover { background: #f5efe6; color: #b8935f; }
-        .overlay { position:fixed;inset:0;z-index:40;background:rgba(31,26,20,0.35);backdrop-filter:blur(2px); }
       `}</style>
 
       {/* Page header */}
-      <div style={{
-        borderBottom: '1px solid #e7dccb',
-        background: '#f8f5ef',
-        padding: '28px 0 0',
-      }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px' }}>
+      <div className="border-b border-[#e7dccb] bg-[#f8f5ef] pt-7">
+        <div className="max-w-7xl mx-auto px-8">
           {/* Breadcrumb */}
-          <div style={{
-            fontSize: 11, letterSpacing: '0.12em', color: '#9b8570',
-            textTransform: 'uppercase', marginBottom: 16,
-            display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <Link to="/" style={{ color: '#9b8570', textDecoration: 'none' }}>Trang chủ</Link>
+          <div className="flex items-center gap-2 mb-4 text-[11px] tracking-[0.12em] uppercase text-[#9b8570]">
+            <Link to="/" className="text-[#9b8570] no-underline hover:text-[#b8935f]">Trang chủ</Link>
             <span>/</span>
-            <span style={{ color: '#1f1a14' }}>Sản phẩm</span>
+            <span className="text-[#1f1a14]">Sản phẩm</span>
           </div>
 
-          <div style={{
-            display: 'flex', alignItems: 'flex-end',
-            justifyContent: 'space-between', flexWrap: 'wrap', gap: 16,
-            paddingBottom: 20,
-          }}>
+          <div className="flex items-end justify-between flex-wrap gap-4 pb-5">
             <div>
-              <h1 style={{
-                fontSize: 32, fontWeight: 400, color: '#1f1a14',
-                margin: 0, letterSpacing: '0.04em', lineHeight: 1.2,
-                fontFamily: '"Cormorant Garamond", serif',
-              }}>
-                {category
-                  ? CATEGORIES.find(c => c.value === category)?.label || 'Sản phẩm' : 'Bộ sưu tập'}
+              <h1 className="m-0 text-3xl font-normal text-[#1f1a14] tracking-[0.04em] leading-tight">
+                {selectedCategoryLabel}
               </h1>
-              <p style={{
-                margin: '6px 0 0', fontSize: 13, color: '#7b6753',
-                letterSpacing: '0.06em', fontFamily: '"Cormorant Garamond", serif',
-              }}>
+              <p className="mt-1.5 mb-0 text-[13px] text-[#7b6753] tracking-[0.06em]">
                 {isLoading ? '...' : `${total} sản phẩm`}
               </p>
             </div>
 
             {/* Search + sort row */}
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <form onSubmit={handleSearch} style={{ position: 'relative' }}>
-                
-              <input
+            <div className="flex gap-3 items-center">
+              <form onSubmit={handleSearch} className="relative">
+                <input
                   type="text"
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
                   placeholder="Tìm kiếm sản phẩm..."
-                  style={{
-                    width: 220, height: 40, padding: '0 40px 0 16px',
-                    border: '1px solid #e7dccb', borderRadius: 8,
-                    background: '#ffffff', color: '#1f1a14', fontSize: 13,
-                    fontFamily: '"Cormorant Garamond", serif', letterSpacing: '0.03em',
-                    transition: 'border-color 0.2s',
-                  }}
+                  className="w-[220px] h-10 pl-4 pr-10 border border-[#e7dccb] rounded-lg bg-white text-[#1f1a14] text-[13px] tracking-[0.03em] outline-none transition-colors focus:border-[#b8935f]"
                 />
-                <button type="submit" style={{
-                  position: 'absolute', right: 0, top: 0, height: '100%',
-                  width: 40, background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#7b6753', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchInput(''); updateParam('search', ''); }}
+                    className="absolute right-9 top-0 h-full w-7 bg-transparent border-none cursor-pointer text-[#9b8570] flex items-center justify-center hover:text-[#b8935f]"
+                    aria-label="Xoá tìm kiếm"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                )}
+                <button type="submit" className="absolute right-0 top-0 h-full w-10 bg-transparent border-none cursor-pointer text-[#7b6753] flex items-center justify-center hover:text-[#b8935f]">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                   </svg>
@@ -201,46 +198,28 @@ export default function ProductListPage() {
               </form>
 
               {/* Sort dropdown */}
-              <div style={{ position: 'relative' }}>
+              <div className="relative">
                 <button
                   onClick={() => setSortOpen(o => !o)}
-                  style={{
-                    height: 40, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 8,
-                    border: '1px solid #e7dccb', borderRadius: 8, background: '#fff',
-                    color: '#1f1a14', fontSize: 13, cursor: 'pointer',
-                    fontFamily: '"Cormorant Garamond", serif', letterSpacing: '0.03em',
-                    whiteSpace: 'nowrap',
-                  }}
+                  className="h-10 px-4 flex items-center gap-2 border border-[#e7dccb] rounded-lg bg-white text-[#1f1a14] text-[13px] cursor-pointer tracking-[0.03em] whitespace-nowrap"
                 >
                   {selectedSortLabel}
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                    style={{ transform: sortOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                    className={`transition-transform duration-200 ${sortOpen ? 'rotate-180' : ''}`}>
                     <polyline points="6 9 12 15 18 9"/>
                   </svg>
                 </button>
                 {sortOpen && (
                   <>
-                    <div className="overlay" style={{ background: 'transparent', backdropFilter: 'none' }} onClick={() => setSortOpen(false)} />
-                    <div style={{
-                      position: 'absolute', right: 0, top: 46, zIndex: 50,
-                      background: '#fff', border: '1px solid #e7dccb', borderRadius: 10,
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.1)', minWidth: 210, overflow: 'hidden',
-                    }}>
+                    <div className="fixed inset-0 z-40" onClick={() => setSortOpen(false)} />
+                    <div className="absolute right-0 top-[46px] z-50 bg-white border border-[#e7dccb] rounded-[10px] shadow-[0_8px_32px_rgba(0,0,0,0.1)] min-w-[210px] overflow-hidden">
                       {SORT_OPTIONS.map(opt => (
                         <div
                           key={opt.value}
-                          className="sort-option"
                           onClick={() => { updateParam('sort', opt.value); setSortOpen(false); }}
-                          style={{
-                            padding: '11px 18px', fontSize: 13, cursor: 'pointer',
-                            color: sort === opt.value ? '#b8935f' : '#5e4a36',
-                            fontWeight: sort === opt.value ? 600 : 400,
-                            fontFamily: '"Cormorant Garamond", serif',
-                            letterSpacing: '0.03em',
-                            background: sort === opt.value ? '#faf6f0' : 'transparent',
-                            transition: 'all 0.15s',
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          }}
+                          className={`px-[18px] py-[11px] text-[13px] cursor-pointer tracking-[0.03em] flex items-center justify-between transition-colors duration-150 hover:bg-[#f5efe6] hover:text-[#b8935f] ${
+                            sort === opt.value ? 'text-[#b8935f] font-semibold bg-[#faf6f0]' : 'text-[#5e4a36] font-normal bg-transparent'
+                          }`}
                         >
                           {opt.label}
                           {sort === opt.value && (
@@ -258,29 +237,60 @@ export default function ProductListPage() {
           </div>
 
           {/* Category tabs */}
-          <div style={{
-            display: 'flex', gap: 0, overflowX: 'auto',
-            borderTop: '1px solid #e7dccb',
-          }}>
-            {CATEGORIES.map(cat => {
-              const active = category === cat.value;
+          <div className="flex gap-0  overflow-y-visible border-t border-[#e7dccb]">
+            {/* "Tất cả" tab */}
+            <button
+              onClick={() => updateParam('category', '')}
+              className={`px-[22px] py-3.5 border-none bg-transparent cursor-pointer text-xs tracking-[0.1em] uppercase whitespace-nowrap transition-all duration-200 border-b-2 hover:text-[#b8935f] ${
+                category === '' ? 'font-semibold text-[#b8935f] border-[#b8935f]' : 'font-normal text-[#7b6753] border-transparent'
+              }`}
+            >
+              Tất cả
+            </button>
+
+            {categories.map(cat => {
+              // Active if this root category itself is selected, or one of its children is selected
+              const active = category === cat.value || cat.children.some(ch => ch.slug === category);
+              const hasChildren = cat.children.length > 0;
               return (
-                <button
+                <div
                   key={cat.value}
-                  className="cat-item"
-                  onClick={() => updateParam('category', cat.value)}
-                  style={{
-                    padding: '14px 22px',
-                    border: 'none', background: 'none', cursor: 'pointer',
-                    fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase',
-                    fontFamily: '"Cormorant Garamond", serif', fontWeight: active ? 600 : 400,
-                    color: active ? '#b8935f' : '#7b6753',
-                    borderBottom: active ? '2px solid #b8935f' : '2px solid transparent',
-                    whiteSpace: 'nowrap', transition: 'all 0.2s',
-                  }}
+                  className="relative"
+                  onMouseEnter={() => hasChildren && setOpenCatSlug(cat.value)}
+                  onMouseLeave={() => setOpenCatSlug(prev => (prev === cat.value ? null : prev))}
                 >
-                  {cat.label}
-                </button>
+                  <button
+                    onClick={() => handleSelectCategory(cat.value)}
+                    className={`px-[22px] py-3.5 border-none bg-transparent cursor-pointer text-xs tracking-[0.1em] uppercase whitespace-nowrap transition-all duration-200 border-b-2 flex items-center gap-1 hover:text-[#b8935f] ${
+                      active ? 'font-semibold text-[#b8935f] border-[#b8935f]' : 'font-normal text-[#7b6753] border-transparent'
+                    }`}
+                  >
+                    {cat.label}
+                    {hasChildren && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                        className={`transition-transform duration-200 ${openCatSlug === cat.value ? 'rotate-180' : ''}`}>
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Hover dropdown: child categories */}
+                  {hasChildren && openCatSlug === cat.value && (
+                    <div className="absolute left-0 top-full z-50 bg-white border border-[#e7dccb] rounded-lg shadow-[0_8px_32px_rgba(0,0,0,0.1)] min-w-[180px] overflow-hidden">
+                      {cat.children.map(child => (
+                        <div
+                          key={child.slug}
+                          onClick={() => handleSelectCategory(child.slug)}
+                          className={`px-[18px] py-[11px] text-xs tracking-[0.08em] uppercase cursor-pointer whitespace-nowrap transition-colors duration-150 hover:bg-[#f5efe6] hover:text-[#b8935f] ${
+                            category === child.slug ? 'text-[#b8935f] font-semibold bg-[#faf6f0]' : 'text-[#5e4a36] font-normal bg-transparent'
+                          }`}
+                        >
+                          {child.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -288,36 +298,26 @@ export default function ProductListPage() {
       </div>
 
       {/* Main content */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 32px 64px', display: 'flex', gap: 36 }}>
+      <div className="max-w-7xl mx-auto px-8 py-8 pb-16 flex gap-9">
 
         {/* Sidebar */}
-        <aside style={{ width: 220, flexShrink: 0 }}>
-          <div style={{
-            background: '#fff', border: '1px solid #e7dccb', borderRadius: 14, overflow: 'hidden',
-          }}>
-            <div style={{ padding: '18px 20px', borderBottom: '1px solid #e7dccb' }}>
-              <p style={{
-                margin: 0, fontSize: 11, letterSpacing: '0.14em', color: '#9b8570',
-                textTransform: 'uppercase', fontFamily: '"Cormorant Garamond", serif', fontWeight: 600,
-              }}>
+        <aside className="w-[220px] flex-shrink-0">
+          <div className="bg-white border border-[#e7dccb] rounded-[14px] overflow-hidden">
+            <div className="px-5 py-[18px] border-b border-[#e7dccb]">
+              <p className="m-0 text-[11px] tracking-[0.14em] uppercase font-semibold text-[#9b8570]">
                 Khoảng giá
               </p>
             </div>
-            <div style={{ padding: '8px 0' }}>
+            <div className="py-2">
               {PRICE_RANGES.map((range, i) => (
                 <button
                   key={i}
                   onClick={() => updateParam('priceRange', i > 0 ? String(i) : '')}
-                  className="filter-btn"
-                  style={{
-                    width: '100%', padding: '10px 20px', textAlign: 'left',
-                    border: 'none', background: priceRangeIdx === i ? '#faf6f0' : 'transparent',
-                    color: priceRangeIdx === i ? '#b8935f' : '#5e4a36',
-                    fontSize: 13, cursor: 'pointer', fontWeight: priceRangeIdx === i ? 600 : 400,
-                    fontFamily: '"Cormorant Garamond", serif', letterSpacing: '0.02em',
-                    borderLeft: priceRangeIdx === i ? '2px solid #b8935f' : '2px solid transparent',
-                    transition: 'all 0.2s',
-                  }}
+                  className={`w-full px-5 py-2.5 text-left border-none text-[13px] cursor-pointer tracking-[0.02em] transition-all duration-200 border-l-2 hover:bg-[#f5efe6] ${
+                    priceRangeIdx === i
+                      ? 'bg-[#faf6f0] text-[#b8935f] font-semibold border-[#b8935f]'
+                      : 'bg-transparent text-[#5e4a36] font-normal border-transparent'
+                  }`}
                 >
                   {range.label}
                 </button>
@@ -327,19 +327,10 @@ export default function ProductListPage() {
 
           {/* Active filters badge */}
           {(category || priceRangeIdx > 0 || search) && (
-            <div style={{ marginTop: 16 }}>
+            <div className="mt-4">
               <button
                 onClick={() => { setSearchInput(''); setSearchParams({}); setPage(1); }}
-                style={{
-                  width: '100%', padding: '10px', border: '1px solid #e7dccb',
-                  borderRadius: 8, background: '#fff', cursor: 'pointer',
-                  color: '#7b6753', fontSize: 12, letterSpacing: '0.08em',
-                  fontFamily: '"Cormorant Garamond", serif', textTransform: 'uppercase',
-                  transition: 'all 0.2s', display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', gap: 6,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#b8935f'; e.currentTarget.style.color = '#b8935f'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e7dccb'; e.currentTarget.style.color = '#7b6753'; }}
+                className="w-full p-2.5 border border-[#e7dccb] rounded-lg bg-white cursor-pointer text-[#7b6753] text-xs tracking-[0.08em] uppercase transition-all duration-200 flex items-center justify-center gap-1.5 hover:border-[#b8935f] hover:text-[#b8935f]"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -351,36 +342,22 @@ export default function ProductListPage() {
         </aside>
 
         {/* Grid */}
-        <div style={{ flex: 1 }}>
+        <div className="flex-1">
           {isLoading ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-              gap: 24,
-            }}>
+            <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
               {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : products.length === 0 ? (
-            <div style={{
-              textAlign: 'center', padding: '80px 20px',
-              color: '#9b8570', fontFamily: '"Cormorant Garamond", serif',
-            }}>
-              <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>◇</div>
-              <p style={{ fontSize: 18, letterSpacing: '0.06em', margin: '0 0 8px', color: '#5e4a36' }}>
+            <div className="text-center py-20 px-5 text-[#9b8570]">
+              <div className="text-5xl mb-4 opacity-30">◇</div>
+              <p className="text-lg tracking-[0.06em] mb-2 text-[#5e4a36]">
                 Không tìm thấy sản phẩm
               </p>
-              <p style={{ fontSize: 13, margin: 0 }}>Thử thay đổi bộ lọc hoặc từ khoá tìm kiếm</p>
+              <p className="text-[13px] m-0">Thử thay đổi bộ lọc hoặc từ khoá tìm kiếm</p>
             </div>
           ) : (
             <>
-              <div
-                className="product-grid"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                  gap: 24,
-                }}
-              >
+              <div className="product-grid grid gap-6 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
                 {products.map(product => (
                   <ProductCard key={product._id} product={product} />
                 ))}
@@ -388,20 +365,13 @@ export default function ProductListPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div style={{
-                  marginTop: 48, display: 'flex', justifyContent: 'center',
-                  alignItems: 'center', gap: 6,
-                }}>
+                <div className="mt-12 flex justify-center items-center gap-1.5">
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    style={{
-                      width: 36, height: 36, border: '1px solid #e7dccb', borderRadius: 8,
-                      background: '#fff', cursor: page === 1 ? 'not-allowed' : 'pointer',
-                      color: page === 1 ? '#c8b9a8' : '#5e4a36',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'all 0.2s',
-                    }}
+                    className={`w-9 h-9 border border-[#e7dccb] rounded-lg bg-white flex items-center justify-center transition-all duration-200 ${
+                      page === 1 ? 'cursor-not-allowed text-[#c8b9a8]' : 'cursor-pointer text-[#5e4a36]'
+                    }`}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="15 18 9 12 15 6"/>
@@ -416,21 +386,16 @@ export default function ProductListPage() {
                       return acc;
                     }, [])
                     .map((p, i) => p === '...' ? (
-                      <span key={`dots-${i}`} style={{ color: '#9b8570', padding: '0 4px', fontSize: 14 }}>…</span>
+                      <span key={`dots-${i}`} className="text-[#9b8570] px-1 text-sm">…</span>
                     ) : (
                       <button
                         key={p}
-                        className="page-btn"
                         onClick={() => setPage(p)}
-                        style={{
-                          width: 36, height: 36, border: `1px solid ${page === p ? '#b8935f' : '#e7dccb'}`,
-                          borderRadius: 8,
-                          background: page === p ? '#b8935f' : '#fff',
-                          color: page === p ? '#fff' : '#5e4a36',
-                          fontSize: 13, cursor: 'pointer', fontWeight: page === p ? 600 : 400,
-                          fontFamily: '"Cormorant Garamond", serif',
-                          transition: 'all 0.2s',
-                        }}
+                        className={`w-9 h-9 rounded-lg text-[13px] cursor-pointer transition-all duration-200 border hover:bg-[#b8935f] hover:text-white hover:border-[#b8935f] ${
+                          page === p
+                            ? 'bg-[#b8935f] text-white border-[#b8935f] font-semibold'
+                            : 'bg-white text-[#5e4a36] border-[#e7dccb] font-normal'
+                        }`}
                       >
                         {p}
                       </button>
@@ -439,13 +404,9 @@ export default function ProductListPage() {
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    style={{
-                      width: 36, height: 36, border: '1px solid #e7dccb', borderRadius: 8,
-                      background: '#fff', cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                      color: page === totalPages ? '#c8b9a8' : '#5e4a36',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'all 0.2s',
-                    }}
+                    className={`w-9 h-9 border border-[#e7dccb] rounded-lg bg-white flex items-center justify-center transition-all duration-200 ${
+                      page === totalPages ? 'cursor-not-allowed text-[#c8b9a8]' : 'cursor-pointer text-[#5e4a36]'
+                    }`}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="9 18 15 12 9 6"/>
