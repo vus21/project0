@@ -20,14 +20,14 @@ class ReviewService {
       throw new ApiError(HTTP_STATUS.FORBIDDEN, 'Bạn cần mua sản phẩm này trước khi đánh giá');
     }
 
-    const existingReview = await Review.findOne({ user: userId, product: productId });
+    const existingReview = await Review.findOne({ user: userId, product_id: productId });
     if (existingReview) {
       throw new ApiError(HTTP_STATUS.CONFLICT, 'Bạn đã đánh giá sản phẩm này rồi');
     }
 
     let review = await Review.create({
       user: userId,
-      product: productId,
+      product_id: productId,
       rating: Number(rating),
       comment,
       isVerifiedPurchase: true
@@ -39,7 +39,7 @@ class ReviewService {
 
   async getProductReviews(productId, query) {
     const { rating, page = 1, limit = 10, sort = 'newest' } = query;
-    const filter = { product: productId };
+    const filter = { product_id: productId };
     if (rating) filter.rating = Number(rating);
 
     const sortObj = sort === 'newest' ? { createdAt: -1 } : { createdAt: -1 };
@@ -53,7 +53,7 @@ class ReviewService {
         .populate('user', 'name avatar'),
       Review.countDocuments(filter),
       Review.aggregate([
-        { $match: { product: new mongoose.Types.ObjectId(productId) } },
+        { $match: { product_id: new mongoose.Types.ObjectId(productId) } },
         { $group: { _id: '$rating', count: { $sum: 1 } } }
       ])
     ]);
@@ -112,7 +112,7 @@ class ReviewService {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit))
-        .populate('product', 'name images slug'),
+        .populate('product_id', 'name images slug'),
       Review.countDocuments({ user: userId })
     ]);
 

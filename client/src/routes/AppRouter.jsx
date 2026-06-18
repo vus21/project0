@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import AdminRoute from './AdminRoute';
 import UserLayout from '../components/layout/UserLayout';
@@ -42,9 +42,9 @@ export default function AppRouter() {
           <Route path="/profile" element={<ProfilePage />} />
 
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/orders" element={<div>Orders Page (Coming soon)</div>} />
+          <Route path="/orders" element={<Navigate to="/profile" state={{ activeTab: 'orders' }} replace />} />
           <Route path="/wishlist" element={<WishListPage />} />
-          <Route path="/address" element={<div>Address Page (Coming soon)</div>} />
+          <Route path="/address" element={<Navigate to="/profile" state={{ activeTab: 'addresses' }} replace />} />
         </Route>
       </Route>
 

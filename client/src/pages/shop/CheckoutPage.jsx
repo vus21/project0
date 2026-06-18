@@ -244,7 +244,7 @@ export default function CheckoutPage() {
       await orderApi.placeOrder(orderPayload);
       console.log('Đặt hàng thành công:', orderPayload);
       alert('Đặt hàng thành công! Cảm ơn quý khách đã lựa chọn OLDMAN.');
-      navigate('/orders');
+      navigate('/profile', { state: { activeTab: 'orders' } });
     } catch (error) {
       console.error('Lỗi đặt hàng:', error);
       alert(error.response?.data?.message || 'Đặt hàng thất bại. Vui lòng kiểm tra lại thông tin.');

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { orderApi } from '../../api/orderApi';
 import { addressApi } from '../../api/addressApi';
@@ -11,9 +12,10 @@ function formatPrice(price) {
 
 export default function ProfilePage() {
     const { user, logout, updateUser, isAuthenticated, isLoading: authLoading } = useAuth();
+    const location = useLocation();
 
     // Quản lý các Tab trong Profile
-    const [activeTab, setActiveTab] = useState('account'); // account | orders | addresses
+    const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'account'); // account | orders | addresses
 
     // --- States cho Tab Tài Khoản ---
     const [accountForm, setAccountForm] = useState({ name: '', phone: '', email: '' });
@@ -49,6 +51,13 @@ export default function ProfilePage() {
         cancelled: 'Đã hủy đơn',
         refunded: 'Đã hoàn tiền'
     };
+    // Đồng bộ tab hoạt động khi location state thay đổi
+    useEffect(() => {
+        if (location.state?.activeTab) {
+            setActiveTab(location.state.activeTab);
+        }
+    }, [location.state]);
+
     // Đồng bộ dữ liệu User vào Form khi thông tin tài khoản load xong
     useEffect(() => {
         if (user) {
