@@ -11,6 +11,7 @@ import wishlistRoutes from './wishlist.routes.js';
 import addressRoutes from './address.routes.js';
 import adminRoutes from './admin.routes.js';
 import chatbotRoutes from './chatbot.js';
+import paymentRoutes from './payment.routes.js';
 
 const router = Router();
 
@@ -34,6 +35,8 @@ router.use('/inventory', inventoryRoutes);
 router.use('/wishlist', wishlistRoutes);
 router.use('/addresses', addressRoutes);
 router.use('/admin', adminRoutes);
+
 router.use('/chatbot', chatbotRoutes);
+router.use('/payments', paymentRoutes);
 
 export default router;

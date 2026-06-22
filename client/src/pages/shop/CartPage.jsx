@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { Link as RouterLink, useNavigate as useRouteNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate as useRouteNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { axiosInstance } from '../../api/axiosInstance';
 import { cartApi } from '../../api/cartApi';
@@ -16,6 +16,19 @@ export default function CartPage() {
   
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showCancelMsg, setShowCancelMsg] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('status') === 'CANCELLED' || searchParams.get('cancel') === 'true') {
+      setShowCancelMsg(true);
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('status');
+      newParams.delete('orderCode');
+      newParams.delete('cancel');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // --- 1. Tải dữ liệu giỏ hàng từ API ---
   useEffect(() => {
@@ -136,6 +149,21 @@ export default function CartPage() {
         <h1 className="text-3xl font-normal text-[#1f1a14] mb-8 tracking-wide">
           Giỏ hàng của bạn
         </h1>
+
+        {showCancelMsg && (
+          <div className="mb-8 bg-red-50 border border-red-200 rounded-2xl p-5 text-sm text-red-800 font-sans flex items-center justify-between shadow-sm max-w-4xl mx-auto">
+            <div className="flex items-center gap-3">
+              <span className="text-red-500 text-lg">⚠️</span>
+              <span>Thanh toán đã bị hủy. Quý khách có thể tiến hành đặt hàng lại hoặc chọn phương thức thanh toán khác.</span>
+            </div>
+            <button 
+              onClick={() => setShowCancelMsg(false)} 
+              className="text-red-500 hover:text-red-700 font-bold ml-2 cursor-pointer bg-transparent border-none outline-none text-xl"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {cartItems.length === 0 ? (
           /* TRẠNG THÁI GIỎ HÀNG TRỐNG */

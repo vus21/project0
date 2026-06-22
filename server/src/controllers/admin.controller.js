@@ -3,6 +3,7 @@ import { adminService } from '../services/admin.service.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { seedService } from '../services/seed.service.js';
 export const seedData = asyncHandler(async (req, res) => {
+  await adminService.seedCategories();
   await adminService.seedData();
   ApiResponse.success(res, null, 'Dữ liệu mẫu đã được tạo thành công');
 });

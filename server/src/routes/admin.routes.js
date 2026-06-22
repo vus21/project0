@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller.js';
 import * as adminUserController from '../controllers/adminUser.controller.js';
+// === IMPORT THÊM CONTROLLER BÁO CÁO ===
+import { exportExcel, exportPdf } from '../controllers/report.controller.js';
 import { protect, restrictTo } from '../middlewares/auth.middleware.js';
 import { USER_ROLES } from '../constants/index.js';
 
@@ -18,6 +20,9 @@ router.get('/top-products', adminController.getTopProducts);
 router.get('/recent-orders', adminController.getRecentOrders);
 router.get('/low-stock', adminController.getLowStock);
 router.get('/sales-by-category', adminController.getSalesByCategory);
+// THÊM MỚI: Report Management / Exports
+router.get('/report/export/excel', exportExcel);
+router.get('/report/export/pdf', exportPdf);
 
 // User Management
 router.get('/users', adminUserController.getUsers);
@@ -25,5 +30,4 @@ router.get('/users/:id', adminUserController.getUserDetail);
 router.post('/users/create-admin', adminUserController.createAdmin);
 router.put('/users/:id', adminUserController.updateUser);
 router.delete('/users/:id', adminUserController.deleteUser);
-
 export default router;

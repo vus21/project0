@@ -15,7 +15,7 @@ const orderItemSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    orderCode: { type: String, unique: true },
+    orderCode: { type: Number, unique: true },
     
     orderItems: [orderItemSchema],
     
@@ -30,6 +30,7 @@ const orderSchema = new mongoose.Schema(
     
     paymentMethod: { type: String, enum: Object.values(PAYMENT_METHOD), default: PAYMENT_METHOD.COD },
     paymentStatus: { type: String, enum: Object.values(PAYMENT_STATUS), default: PAYMENT_STATUS.PENDING },
+    paymentLinkId: String,
     orderStatus: { type: String, enum: Object.values(ORDER_STATUS), default: ORDER_STATUS.PENDING },
     
     voucher: {
@@ -62,9 +63,9 @@ orderSchema.index({ createdAt: -1 });
 // Tự sinh mã Đơn hàng (OrderCode) và tính toán chi phí trước khi lưu
 orderSchema.pre('save', function (next) {
   if (!this.orderCode) {
-    const timestamp = Date.now().toString().slice(-6);
+    const timestamp = Date.now().toString().slice(-10);
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    this.orderCode = `ORD-${timestamp}-${random}`;
+    this.orderCode = Number(timestamp + random);
   }
   
   if (this.isModified('itemPrice')) {

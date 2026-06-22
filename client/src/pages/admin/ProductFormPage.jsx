@@ -7,7 +7,6 @@ import { toast } from 'react-hot-toast';
 import { Loader2, ArrowLeft, Upload, X, Plus, Trash2, Sparkles, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-
 import {
   SEASONS, SEASON_LABELS,
   MATERIALS, MATERIAL_LABELS,
@@ -32,6 +31,8 @@ export default function ProductFormPage() {
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  // Thêm state lưu các ảnh cũ bị người dùng xóa
+  const [deletedImages, setDeletedImages] = useState([]);
 
   const [existingVariants, setExistingVariants] = useState([]);
   const [newVariants, setNewVariants] = useState([]);
@@ -69,7 +70,6 @@ export default function ProductFormPage() {
 
           setValue('isActive', product.isActive);
 
-          // Thêm load dữ liệu tags, material, season
           setValue('tags', product.tags || []);
           setValue('material', product.material || '');
           setValue('season', product.season || []);
@@ -103,6 +103,16 @@ export default function ProductFormPage() {
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Hàm xử lý xóa ảnh cũ đã tồn tại
+  const removeExistingImage = (img, index) => {
+    // Nếu ảnh có public_id hoặc _id từ DB, ta lưu lại để gửi lên API xóa
+    const imgId = img.public_id || img._id || img.url;
+    setDeletedImages(prev => [...prev, imgId]);
+
+    // Loại bỏ khỏi danh sách hiển thị tạm thời trên giao diện
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const addNewRow = () =>
     setNewVariants((prev) => [...prev, { sku: '', color: '', size: '', stock: 0 }]);
 
@@ -123,17 +133,19 @@ export default function ProductFormPage() {
       formData.append('category_id', data.category_id);
       formData.append('isActive', data.isActive);
 
-      // Nạp dữ liệu material
       if (data.material) formData.append('material', data.material);
 
-      // Nạp mảng tags (Nhiều value trùng key)
       if (data.tags && data.tags.length > 0) {
         data.tags.forEach(tag => formData.append('tags', tag));
       }
 
-      // Nạp mảng season (Nhiều value trùng key)
       if (data.season && data.season.length > 0) {
         data.season.forEach(s => formData.append('season', s));
+      }
+
+      // Nạp danh sách các ảnh cũ bị xóa để backend nhận diện và xử lý xóa trên hosting/cloud
+      if (deletedImages.length > 0) {
+        deletedImages.forEach(imgId => formData.append('deletedImages', imgId));
       }
 
       images.forEach(img => {
@@ -244,7 +256,6 @@ export default function ProductFormPage() {
               </div>
             </div>
 
-            {/* Các thuộc tính Tags và Season (Mùa) - Được gom chung một khối */}
             <div className="space-y-5 border-t border-gray-100 pt-5 mt-5">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">Mùa phù hợp</label>
@@ -301,12 +312,24 @@ export default function ProductFormPage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+            {/* Ảnh cũ hiện tại - Bổ sung thêm nút xóa khi hover */}
             {existingImages.map((img, idx) => (
               <div key={`existing-${idx}`} className="relative group rounded-lg overflow-hidden border border-gray-200 shadow-sm aspect-square">
                 <img src={img.url} className="w-full h-full object-cover" alt="Product" />
-                <div className="absolute top-2 right-2 bg-gray-900 bg-opacity-70 backdrop-blur text-white text-xs font-medium px-2 py-1 rounded-md">Ảnh cũ</div>
+                <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-70 backdrop-blur text-white text-xs font-medium px-2 py-1 rounded-md group-hover:opacity-0 transition-opacity">Ảnh cũ</div>
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all"></div>
+                <button
+                  type="button"
+                  onClick={() => removeExistingImage(img, idx)}
+                  className="absolute top-2 right-2 p-1.5 bg-white text-red-500 hover:bg-red-50 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100"
+                  title="Xóa ảnh cũ này"
+                >
+                  <X size={16} />
+                </button>
               </div>
             ))}
+
+            {/* Ảnh mới preview */}
             {previewImages.map((src, idx) => (
               <div key={`preview-${idx}`} className="relative group rounded-lg overflow-hidden border border-gray-200 shadow-sm aspect-square">
                 <img src={src} className="w-full h-full object-cover" alt="Preview" />
@@ -326,7 +349,6 @@ export default function ProductFormPage() {
             Quản lý biến thể sản phẩm
           </h2>
 
-          {/* Biến thể hiện tại */}
           {isEdit && existingVariants.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
@@ -353,8 +375,7 @@ export default function ProductFormPage() {
                         <td className="px-4 py-2 text-xs text-gray-600">{v.size || '—'}</td>
                         <td className="px-4 py-2 text-xs font-semibold text-gray-800">{v.stock ?? 0}</td>
                         <td className="px-4 py-2">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-medium ${v.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                            }`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-medium ${v.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                             {v.isActive ? 'Đang bán' : 'Ẩn'}
                           </span>
                         </td>
@@ -366,7 +387,6 @@ export default function ProductFormPage() {
             </div>
           )}
 
-          {/* Thêm mới */}
           <div className="pt-2">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">

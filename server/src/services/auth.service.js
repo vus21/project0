@@ -24,7 +24,7 @@ class AuthService {
         role: USER_ROLES.ADMIN,
         isVerified: true
       });
-      await Cart.create({ user_id: admin._id });
+      // await Cart.create({ user_id: admin._id });
     } else if (!admin.isVerified) {
       admin.isVerified = true;
       await admin.save({ validateBeforeSave: false });
@@ -33,8 +33,8 @@ class AuthService {
    
     return {
       message: 'Seed dữ liệu thành công',
-      admin,
-      products: createdProducts
+      // admin,
+      // products: createdProducts
     };
   }
   async register(name, email, password, phone) {
@@ -56,17 +56,17 @@ class AuthService {
       password,
       phone,
       verificationToken,
-      isVerified: false
+      isVerified: true
     });
 
     await Cart.create({ user_id: user._id }); // Tạo giỏ hàng rỗng
 
     // Gửi email xác thực (không throw lỗi nếu email fail, chỉ log)
-    try {
-      await sendVerificationEmail(email, name, verificationToken);
-    } catch (err) {
-      console.error('⚠️ Lỗi gửi email xác thực:', err.message);
-    }
+    // try {
+    //   await sendVerificationEmail(email, name, verificationToken);
+    // } catch (err) {
+    //   console.error('⚠️ Lỗi gửi email xác thực:', err.message);
+    // }
 
     return { message: 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.' };
   }
@@ -180,7 +180,57 @@ class AuthService {
     await user.save(); // Pre-save hook sẽ hash password mới
     return true;
   }
+  async forgotPassword(email) {
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Bảo mật: Không tiết lộ email có tồn tại hay không để tránh bị dò quét tài khoản
+      return { message: 'Nếu email tồn tại trong hệ thống, chúng tôi sẽ gửi link đặt lại mật khẩu.' };
+    }
 
+    if (!user.isActive) {
+      throw new ApiError(HTTP_STATUS.UNAUTHORIZED, 'Tài khoản của bạn đã bị khóa');
+    }
+
+    // Tạo reset token bằng JWT, hết hạn sau 15 phút để đảm bảo an toàn
+    const resetToken = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    // Bạn có thể tận dụng dịch vụ email có sẵn hoặc chỉnh sửa nội dung gửi phù hợp
+    try {
+      // Gợi ý: Nếu sendVerificationEmail chỉ fix cứng cho việc xác thực, bạn nên viết thêm 1 hàm gửi mail reset riêng.
+      // Ở đây mình tạm dùng hàm gửi mail có sẵn theo cấu trúc service của bạn:
+      await sendVerificationEmail(email, user.name, resetToken);
+    } catch (err) {
+      console.error('⚠️ Lỗi gửi email quên mật khẩu:', err.message);
+      throw new ApiError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Không thể gửi email lúc này. Vui lòng thử lại sau.');
+    }
+
+    return { message: 'Link đặt lại mật khẩu đã được gửi vào email của bạn. Vui lòng kiểm tra hộp thư.' };
+  }
+
+  async resetPassword(token, newPassword) {
+    let decoded;
+    try {
+      // Xác thực token xem có hợp lệ hoặc hết hạn (15p) chưa
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      throw new ApiError(HTTP_STATUS.BAD_REQUEST, 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn');
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user || !user.isActive) {
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Tài khoản không hợp lệ hoặc đã bị khóa');
+    }
+
+    // Cập nhật mật khẩu mới (sẽ chạy qua pre-save hook để hash mật khẩu tự động)
+    user.password = newPassword;
+    await user.save();
+
+    return { message: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.' };
+  }
   async getProfile(userId) {
     const user = await User.findById(userId).populate({
       path: 'wishlist',

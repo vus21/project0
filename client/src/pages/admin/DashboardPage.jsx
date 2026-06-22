@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { adminApi } from '../../api/adminApi';
 import { 
-  Users, ShoppingBag, DollarSign, Package, AlertTriangle 
+  Users, ShoppingBag, DollarSign, Package, AlertTriangle,
+  // === THÊM ICON MỚI CHO EXPORT ===
+  FileSpreadsheet, FileText, ChevronDown 
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -29,6 +31,12 @@ export default function DashboardPage() {
   const [lowStock, setLowStock] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // === CÁC STATE & REF QUẢN LÝ XUẤT FILE ===
+  const [isExcelMenuOpen, setIsExcelMenuOpen] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const excelMenuRef = useRef(null);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -45,7 +53,6 @@ export default function DashboardPage() {
         setLowStock(stockRes?.data || []);
       } catch (error) {
         console.error('Lỗi tải Dashboard', error);
-        // Fallback an toàn nếu API lỗi hoàn toàn
         setStats({ totalUsers: 0, totalOrders: 0, totalProducts: 0, totalRevenue: 0, today: { orders: 0, revenue: 0 }, ordersByStatus: {} });
         setChartData([]);
         setTopProducts([]);
@@ -55,7 +62,62 @@ export default function DashboardPage() {
       }
     };
     fetchDashboardData();
+
+    // Sự kiện click bên ngoài để ẩn dropdown
+    const handleOutsideClick = (event) => {
+      if (excelMenuRef.current && !excelMenuRef.current.contains(event.target)) {
+        setIsExcelMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
+
+  // === HÀM TRỢ GIÚP DOWNLOAD FILE TỪ LUỒNG BLOB ===
+  const triggerFileDownload = (blobData, defaultFilename) => {
+    const url = window.URL.createObjectURL(new Blob([blobData]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', defaultFilename);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  // === XỬ LÝ XUẤT FILE EXCEL ===
+  const handleExportExcel = async (type) => {
+    setIsExportingExcel(true);
+    setIsExcelMenuOpen(false);
+    try {
+      const response = await adminApi.exportExcel(type);
+      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const filename = `${type}-report-${dateStr}.xlsx`;
+      
+      const dataBlob = response.data ? response.data : response;
+      triggerFileDownload(dataBlob, filename);
+    } catch (error) {
+      console.error('Lỗi xuất file Excel:', error);
+      alert('Không thể xuất file Excel. Vui lòng kiểm tra lại hệ thống.');
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
+  // === XỬ LÝ XUẤT FILE PDF ===
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      const response = await adminApi.exportPdf();
+      const dataBlob = response.data ? response.data : response;
+      triggerFileDownload(dataBlob, 'dashboard-report.pdf');
+    } catch (error) {
+      console.error('Lỗi xuất file PDF:', error);
+      alert('Không thể xuất báo cáo PDF. Vui lòng kiểm tra lại hệ thống.');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -75,8 +137,60 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-center">
+      {/* SỬA ĐỔI HEADER: THÊM CÁC NÚT BẤM EXPORT BÁO CÁO */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4">
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Báo Cáo Tổng Quan</h1>
+        
+        <div className="flex items-center gap-3">
+          {/* Dropdown Menu Export Excel */}
+          <div className="relative" ref={excelMenuRef}>
+            <button
+              onClick={() => setIsExcelMenuOpen(!isExcelMenuOpen)}
+              disabled={isExportingExcel}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer"
+            >
+              <FileSpreadsheet size={16} />
+              <span>{isExportingExcel ? 'Đang xuất...' : 'Export Excel'}</span>
+              <ChevronDown size={14} className={`transition-transform duration-200 ${isExcelMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isExcelMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-50">
+                <button
+                  onClick={() => handleExportExcel('revenue')}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  Xuất doanh thu
+                </button>
+                <button
+                  onClick={() => handleExportExcel('orders')}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                  Xuất đơn hàng
+                </button>
+                <button
+                  onClick={() => handleExportExcel('inventory')}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  Xuất tồn kho
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Button Export PDF */}
+          <button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer"
+          >
+            <FileText size={16} />
+            <span>{isExportingPdf ? 'Đang tạo PDF...' : 'Export PDF'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards Row */}
@@ -88,7 +202,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Chart Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-bold text-gray-800 mb-6">Biểu đồ doanh thu {new Date().getFullYear()}</h3>
           <div className="h-80 w-full">
@@ -114,43 +228,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">Trạng thái đơn hàng</h3>
-          <div className="h-80 w-full flex items-center justify-center">
-            {pieData.length === 0 ? (
-              <p className="text-gray-400">Chưa có dữ liệu</p>
-            ) : (
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={65}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[STATUS_NAMES.indexOf(entry.name)]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
-                  />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
+       
       </div>
 
       {/* Tables Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Sản Phẩm Bán Chạy Trứ Danh</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Sản Phẩm Bán Chạy  </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-400 uppercase bg-gray-50 border-b">

@@ -12,4 +12,13 @@ export const adminApi = {
   updateUser: (id, data) => axiosInstance.put(`/admin/users/${id}`, data),
   deleteUser: (id) => axiosInstance.delete(`/admin/users/${id}`),
   createAdmin: (data) => axiosInstance.post('/admin/users/create-admin', data),
+  
+  // === TÍCH HỢP THÊM 2 HÀM XUẤT BÁO CÁO ===
+  exportExcel: (type) => axiosInstance.get('/admin/report/export/excel', { 
+    params: { type }, 
+    responseType: 'blob' 
+  }),
+  exportPdf: () => axiosInstance.get('/admin/report/export/pdf', { 
+    responseType: 'blob' 
+  }),
 };

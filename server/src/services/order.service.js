@@ -188,7 +188,20 @@ class OrderService {
     if (orderStatus) filter.orderStatus = orderStatus;
     if (paymentStatus) filter.paymentStatus = paymentStatus;
     if (userId) filter.user = userId;
-    if (search) filter.orderCode = { $regex: search, $options: 'i' };
+    if (search) {
+      const searchNum = Number(search);
+      if (!isNaN(searchNum)) {
+        filter.orderCode = searchNum;
+      } else {
+        filter.$expr = {
+          $regexMatch: {
+            input: { $toString: '$orderCode' },
+            regex: search,
+            options: 'i'
+          }
+        };
+      }
+    }
     
     if (dateFrom || dateTo) {
       filter.createdAt = {};

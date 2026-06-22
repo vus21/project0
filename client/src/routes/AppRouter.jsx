@@ -25,6 +25,7 @@ import CartPage from '../pages/shop/CartPage';
 import ProfilePage from '../pages/auth/ProfilePage';
 import VoucherPage from '../pages/admin/VoucherPage';
 import WishListPage from '../pages/shop/WishListPage';
+import PaymentSuccessPage from '../pages/shop/PaymentSuccessPage';
 export default function AppRouter() {
   return (
     <Routes>
@@ -39,6 +40,7 @@ export default function AppRouter() {
         {/* Protected Routes cho User */}
         <Route element={<ProtectedRoute />}>
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/profile" element={<ProfilePage />} />
 
           <Route path="/cart" element={<CartPage />} />

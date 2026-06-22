@@ -194,6 +194,38 @@ class ProductService {
     }
 
     let uploadedImages = product.images || [];
+
+    // Xử lý xóa các ảnh cũ được yêu cầu xóa từ giao diện
+    if (data.deletedImages) {
+      const deletedImages = Array.isArray(data.deletedImages)
+        ? data.deletedImages
+        : [data.deletedImages];
+
+      if (deletedImages.length > 0) {
+        for (const imgId of deletedImages) {
+          const img = uploadedImages.find(image => 
+            image.public_id === imgId || 
+            image._id?.toString() === imgId || 
+            image.url === imgId
+          );
+          if (img && img.public_id) {
+            try {
+              await cloudinaryConfig.uploader.destroy(img.public_id);
+            } catch (err) {
+              console.error(`[Cloudinary Destroy Warning] Lỗi xóa ảnh ${img.public_id}:`, err);
+            }
+          }
+        }
+
+        // Lọc bỏ ảnh bị xóa ra khỏi danh sách ảnh của sản phẩm
+        uploadedImages = uploadedImages.filter(image => 
+          !deletedImages.includes(image.public_id) && 
+          !deletedImages.includes(image._id?.toString()) && 
+          !deletedImages.includes(image.url)
+        );
+      }
+    }
+
     let newImages = [];
     if (files && files.length > 0) {
       try {

@@ -34,6 +34,7 @@ export const PAYMENT_STATUS = {
 
 export const PAYMENT_METHOD = {
   COD: 'COD',
+  PAYOS: 'PAYOS',
 };
 
 export const DISCOUNT_TYPE = {

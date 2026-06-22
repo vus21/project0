@@ -5,6 +5,7 @@ import { addressApi } from '../../api/addressApi';
 import { orderApi } from '../../api/orderApi';
 import { cartApi } from '../../api/cartApi.js';
 import { voucherApi } from '../../api/voucherApi'; // ◄ 1. THÊM IMPORT VOUCHER API
+import { paymentApi } from '../../api/paymentApi';
 import { ArrowLeft, MapPin, CreditCard, Ticket, NotepadText, ShieldCheck } from 'lucide-react';
 
 function formatPrice(price) {
@@ -241,13 +242,29 @@ export default function CheckoutPage() {
     };
 
     try {
-      await orderApi.placeOrder(orderPayload);
-      console.log('Đặt hàng thành công:', orderPayload);
+      const res = await orderApi.placeOrder(orderPayload);
+      const createdOrder = res.data || res;
+      
+      if (paymentMethod === 'PAYOS') {
+        const linkRes = await paymentApi.createPaymentLink({
+          orderId: createdOrder._id,
+          amount: createdOrder.totalPrice
+        });
+        
+        const checkoutUrl = linkRes.data?.checkoutUrl || linkRes.checkoutUrl;
+        if (checkoutUrl) {
+          window.location.href = checkoutUrl;
+          return;
+        } else {
+          throw new Error('Không lấy được link thanh toán từ hệ thống PayOS.');
+        }
+      }
+
       alert('Đặt hàng thành công! Cảm ơn quý khách đã lựa chọn OLDMAN.');
       navigate('/profile', { state: { activeTab: 'orders' } });
     } catch (error) {
       console.error('Lỗi đặt hàng:', error);
-      alert(error.response?.data?.message || 'Đặt hàng thất bại. Vui lòng kiểm tra lại thông tin.');
+      alert(error.message || 'Đặt hàng thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
       setIsSubmitting(false);
     }
@@ -420,19 +437,19 @@ export default function CheckoutPage() {
               </label>
 
               <label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-all ${
-                paymentMethod === 'VNPAY' ? 'bg-[#f5efe6]/40 border-[#b8935f]' : 'border-[#e7dccb] bg-transparent'
+                paymentMethod === 'PAYOS' ? 'bg-[#f5efe6]/40 border-[#b8935f]' : 'border-[#e7dccb] bg-transparent'
               }`}>
                 <input 
                   type="radio" 
                   name="payMethod" 
-                  value="VNPAY" 
-                  checked={paymentMethod === 'VNPAY'} 
-                  onChange={() => setPaymentMethod('VNPAY')} 
+                  value="PAYOS" 
+                  checked={paymentMethod === 'PAYOS'} 
+                  onChange={() => setPaymentMethod('PAYOS')} 
                   className="accent-[#b8935f] w-4 h-4" 
                 />
                 <div>
-                  <div className="font-semibold text-sm text-[#1f1a14]">Cổng thanh toán điện tử VNPAY</div>
-                  <div className="text-xs text-[#7b6753] mt-0.5">Thanh toán quét mã QR qua ứng dụng ngân hàng di động nhanh chóng.</div>
+                  <div className="font-semibold text-sm text-[#1f1a14]">Thanh toán qua PayOS (ATM/Visa/Mastercard/QR)</div>
+                  <div className="text-xs text-[#7b6753] mt-0.5">Hệ thống thanh toán nhanh, an toàn và bảo mật cao thông qua cổng PayOS.</div>
                 </div>
               </label>
             </div>
