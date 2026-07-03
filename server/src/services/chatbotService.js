@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import Product from '../models/Product.js';
 import { PRODUCT_TAGS, MATERIALS, SEASONS } from '../constants/index.js';
-
+import Category from '../models/Category.js';
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const MODEL = 'gemini-2.5-flash';
 

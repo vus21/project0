@@ -36,7 +36,7 @@ export default function ProductDetailPage() {
       try {
 
         const response = await productApi.getBySlug(slug);
-        // Chú ý bóc tách dữ liệu theo đúng chuẩn trả về của Backend dự án
+
         const data = response?.data || response?.data?.product || response;
 
         setProduct(data);
