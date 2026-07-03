@@ -1,6 +1,5 @@
 # E-Commerce API Documentation
 
-Đây là tài liệu API tóm tắt cho ứng dụng MERN Stack E-Commerce (Phase 1-8).
 
 ## Thông tin chung
 - **Base URL:** `http://localhost:5000/api`
@@ -100,27 +99,3 @@
 
 ---
 
-## Chuẩn Response của API (Chuẩn hóa toàn Server)
-
-**Thành công (200, 201)**
-```json
-{
-  "success": true,
-  "message": "Thông báo thành công",
-  "data": { ... },
-  "pagination": {
-    "total": 50,
-    "page": 1,
-    "totalPages": 5
-  }
-}
-```
-
-**Thất bại (400, 401, 403, 404, 409, 500)**
-```json
-{
-  "success": false,
-  "message": "Mô tả lỗi (ví dụ: Không tìm thấy sản phẩm)",
-  "error": "Not Found" // Chỉ hiển thị stack trace ở môi trường DEV
-}
-```

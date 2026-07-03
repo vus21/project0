@@ -8,6 +8,9 @@ import {
   PRODUCT_TAGS,
 } from '../constants/index.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ====== DATA POOL ĐỂ SINH SẢN PHẨM ĐA DẠNG ======
 
@@ -587,16 +590,16 @@ _formatExcelHeader(worksheet) {
     doc.registerFont(
       'VietnameseFont',
       path.join(
-        process.cwd(),
-        'server/src/assets/font/Noto_Serif_regular/static/NotoSerif-Regular.ttf'
+        __dirname,
+        '../assets/font/Noto_Serif_regular/static/NotoSerif-Regular.ttf'
       )
     );
 
     doc.registerFont(
       'VietnameseFontBold',
       path.join(
-        process.cwd(),
-        'server/src/assets/font/Noto_Serif_regular/static/NotoSerif-Bold.ttf'
+        __dirname,
+        '../assets/font/Noto_Serif_regular/static/NotoSerif-Bold.ttf'
       )
     );
 
@@ -604,7 +607,7 @@ _formatExcelHeader(worksheet) {
   } catch (error) {
     console.error('Không thể tải font PDF:', error);
     throw new Error(
-      'Thiếu font Noto Serif. Vui lòng thêm NotoSerif-Regular.ttf và NotoSerif-Bold.ttf vào src/assets/fonts/'
+      'Thiếu font Noto Serif. Vui lòng thêm NotoSerif-Regular.ttf và NotoSerif-Bold.ttf vào src/assets/font/Noto_Serif_regular/static/'
     );
   }
 
